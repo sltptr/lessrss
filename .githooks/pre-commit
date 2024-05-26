@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# A hook script to strip output from Jupyter notebooks before committing.
+#
+for file in $(git diff --cached --name-only | grep ".ipynb"); do
+    if [ -f "$file" ]; then
+        echo "Stripping output from $file"
+        jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace "$file"
+        git add "$file"
+    fi
+done
+
