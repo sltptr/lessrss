@@ -1,14 +1,16 @@
+import os
 import sys
+from abc import ABC, abstractmethod
 
+import feedparser
 import joblib
 import yaml
-from flask import Flask, jsonify, request
+from feedparser import FeedParserDict
+from flask import Flask
+from openai import OpenAI
+from pydantic import BaseModel, RootModel
 
 sys.path.append("/app/data/")
-
-from custom_transformer import DenseTransformer
-
-app = Flask(__name__)
 
 
 def load_config():
@@ -17,56 +19,115 @@ def load_config():
     return config
 
 
-def load_tf_idf_logistic():
-    return joblib.load("/app/data/tf-idf-logreg.joblib")
+### Types
 
 
-def load_tf_idf_naive_bayes():
-    return joblib.load("/app/data/tf-idf-nb.joblib")
+class ModelData(BaseModel):
+    name: str
+    vote_weight: int
+    active: bool
 
 
-def load_fasttext():
+class ModelDataList(RootModel):
+    root: list[ModelData]
+
+
+class Feed(BaseModel):
+    url: str
+
+
+class FeedList(RootModel):
+    root: list[Feed]
+
+
+### Models
+
+
+class Model(ABC):
+
+    def __init__(self, data: ModelData) -> None:
+        self.vote_weight = data.vote_weight
+        self.active = data.active
+
+    @abstractmethod
+    def load(self):
+        pass
+
+    @abstractmethod
+    def run(self):
+        pass
+
+
+class TFIDFLogistic(Model):
+
+    def __init__(self, data: ModelData) -> None:
+        super().__init__(data)
+
+    def load(self):
+        self.model = joblib.load("/app/data/tf-idf-logistic.joblib")
+
+    def run(self):
+        pass
+
+
+class GPT(Model):
+
+    def __init__(self, data: ModelData) -> None:
+        super().__init__(data)
+
+    def load(self):
+        OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+        self.client = OpenAI(api_key=OPENAI_API_KEY)
+
+    def run(self):
+        pass
+
+
+### Filtering
+
+
+def download_feed(feed: Feed) -> FeedParserDict:
+    return feedparser.parse(feed.url)
+
+
+def download_all() -> list[FeedParserDict]:
+    config = load_config()
+    feedList = FeedList(root=config["feeds"])
+    return [download_feed(item) for item in feedList.root]
+
+
+def filter_feed(feed: Feed) -> Feed:
+    return feed
+
+
+def filter_all():
     return
 
 
-def load_distilbert():
-    return
+### Routes
+
+app = Flask(__name__)
 
 
-model_fn_map = {
-    "tf-idf-logreg": load_tf_idf_logistic,
-    "tf-idf-nb": load_tf_idf_naive_bayes,
-}
+# Get raw feeds before filtering is applied
+@app.route("/raw", methods=["GET"])
+def raw():
+    return download_all()
 
 
-def load_models_with_scalars(config):
-    scalars = config.get("scalars", {})
-    models = [
-        {"model": model_fn_map[key](), "scalar": value}
-        for key, value in scalars.items()
-    ]
-    return models
+# Get filtered feeds
+@app.route("/filter", methods=["GET"])
+def filter():
+    return download_all()
 
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    data = request.get_json(force=True)
-    text = data.get("text", "...")
-    predictions = []
-    for model_dict in load_models_with_scalars(load_config()):
-        model, scalar = model_dict["model"], model_dict["scalar"]
-        predictions.append(model.predict([text])[0] * scalar)
-    return jsonify({"predictions": predictions})
-
-
-# Get RSS feed
-@app.route("/rss", methods=["GET"])
-def rss():
+# Generate personalized feed
+@app.route("/generate", methods=["GET"])
+def generate():
     return "todo"
 
 
-# Update RSS feed
-@app.route("/update", methods=["GET"])
+# Update the viewing pattern CSV
 def update():
     return "todo"
 
