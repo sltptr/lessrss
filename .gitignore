@@ -1,4 +1,6 @@
 **/.venv
+**/.ipynb_checkpoints
+**/__pycache__
+**/results
 data/
-training/.ipynb_checkpoints
 .env
