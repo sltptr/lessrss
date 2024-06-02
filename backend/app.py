@@ -11,8 +11,9 @@ import numpy as np
 import pandas as pd
 import PyRSS2Gen
 import yaml
+from apscheduler.schedulers.background import BackgroundScheduler
 from feedparser import FeedParserDict
-from flask import Flask, send_file
+from flask import Flask, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from openai import OpenAI
 from pydantic import BaseModel
@@ -235,10 +236,9 @@ def generate():
         lastBuildDate=datetime.now(),
         items=items,
     )
-    with open("/app/data/feed.xml", "w", encoding="utf-8") as f:
+    with open("/app/data/files/feed.xml", "w", encoding="utf-8") as f:
         rss.write_xml(f)
-
-    return df.to_json()
+    return "OK", 200
 
 
 # Get raw feed before filtering is applied
@@ -254,9 +254,17 @@ def data():
 
 
 # Feed endpoint
-@app.route("/", methods=["GET"])
-def root():
-    return send_file("/app/data/feed.xml", mimetype="rss+xml")
+@app.route("/files/<path:filename>", methods=["GET"])
+def root(filename):
+    return send_from_directory("/app/data/files", filename)
+
+
+### Scheduled Task
+
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(generate, "interval", hours=4)
+scheduler.start()
 
 
 if __name__ == "__main__":
