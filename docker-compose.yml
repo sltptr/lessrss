@@ -10,13 +10,3 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     env_file:
       - .env
-  filebrowser:
-    image: filebrowser/filebrowser
-    container_name: filebrowser
-    volumes:
-      - ./data:/srv
-    ports:
-      - 8080:80
-    environment:
-      - FB_NOAUTH=true
-    restart: unless-stopped
