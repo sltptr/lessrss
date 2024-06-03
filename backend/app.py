@@ -18,7 +18,7 @@ from flask_sqlalchemy import SQLAlchemy
 from openai import OpenAI
 from pydantic import BaseModel
 from sklearn.pipeline import Pipeline
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime, String, func
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -73,7 +73,7 @@ class Item(db.Model):
     __tablename__ = "item"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str]
+    title: Mapped[str] = mapped_column(String, unique=True)
     link: Mapped[str]
     label: Mapped[Label] = mapped_column(default=Label.NONE)
     description: Mapped[Optional[str]]
@@ -215,6 +215,9 @@ def generate():
             guid = entry.get("guid")
             pubDate = entry.get("guid")
             source = entry.get("source")
+            existing_item = Item.query.filter_by(title=entry.title).first()
+            if existing_item:
+                continue
             item = Item(
                 title=title,
                 link=link,
