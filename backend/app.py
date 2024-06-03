@@ -230,7 +230,7 @@ def generate():
             db.session.commit()
             if i in filter or feed_config.show_all:
                 rssItem = PyRSS2Gen.RSSItem(
-                    title=f"{'\u2B50' if i in filter else ''}{title}",
+                    title=f"{'\u2B50' if i in filter else ''} {title}",
                     link=f"{config.host}/update/{item.id}/1",
                     description=f"{description}<br><br><a href='{config.host}/update/{item.id}/0'>Click To Dislike</a>",
                     author=author,
@@ -289,8 +289,13 @@ def link_handler(id, value):
 ### Scheduled Task
 
 
+def generate_task():
+    with app.app_context():
+        generate()
+
+
 scheduler = BackgroundScheduler()
-scheduler.add_job(generate, "interval", hours=4)
+scheduler.add_job(generate_task, "interval", hours=4)
 scheduler.start()
 
 
