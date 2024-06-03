@@ -206,7 +206,7 @@ def generate():
         items = []
         for entry in filtered_entries:
             item = PyRSS2Gen.RSSItem(
-                title=entry.get("\u2B50 title"),
+                title=f"\u2B50 {entry.get("title")}",
                 link=entry.get("link"),
                 description=entry.get("description"),
                 author=entry.get("author"),
