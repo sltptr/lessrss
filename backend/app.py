@@ -231,7 +231,7 @@ def generate():
             rssItem = PyRSS2Gen.RSSItem(
                 title=f"\u2B50 {title}",
                 link=f"{config.host}/update/{item.id}/1",
-                description=f"{description}\n<a href='{config.host}/update/{item.id}/0'>Click To Dislike</a>",
+                description=f"{description}<br><br><a href='{config.host}/update/{item.id}/0'>Click To Dislike</a>",
                 author=author,
                 comments=comments,
                 enclosure=enclosure,
