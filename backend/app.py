@@ -33,6 +33,7 @@ class ModelConfig(BaseModel):
 
 class FeedConfig(BaseModel):
     url: str
+    show_all: bool
     directory: str
 
 
@@ -176,9 +177,9 @@ def load_tfidf():
 ### Routes
 
 
-def download_all() -> list[tuple[FeedParserDict, str]]:
+def download_all() -> list[tuple[FeedParserDict, FeedConfig]]:
     config = load_config()
-    return [(feedparser.parse(item.url), item.directory) for item in config.feeds]
+    return [(feedparser.parse(item.url), item) for item in config.feeds]
 
 
 def convert_to_dataframe(entries: list[FeedParserDict]):
@@ -193,7 +194,7 @@ def generate():
     tfidf = TFIDFLogistic(config.models["tfidf"])
     gpt = GPT(config.models["gpt"])
     models = [tfidf, gpt]
-    for feed, directory in download_all():
+    for feed, feed_config in download_all():
         df = convert_to_dataframe(feed.entries)
         df["votes"] = 0
         for model in models:
@@ -202,10 +203,9 @@ def generate():
             model.load()
             preds = model.run(df)
             df["votes"] += preds * model.vote_weight
-        filter = df.index[df["votes"] >= config.quorom]
-        filtered_entries = [feed.entries[i] for i in filter]
+        filter = set(df.index[df["votes"] >= config.quorom])
         rssItems = []
-        for entry in filtered_entries:
+        for i, entry in enumerate(feed.entries):
             title = entry.get("title")
             link = entry.get("link")
             description = entry.get("description")
@@ -228,18 +228,19 @@ def generate():
             )
             db.session.add(item)
             db.session.commit()
-            rssItem = PyRSS2Gen.RSSItem(
-                title=f"\u2B50 {title}",
-                link=f"{config.host}/update/{item.id}/1",
-                description=f"{description}<br><br><a href='{config.host}/update/{item.id}/0'>Click To Dislike</a>",
-                author=author,
-                comments=comments,
-                enclosure=enclosure,
-                guid=guid,
-                pubDate=pubDate,
-                source=source,
-            )
-            rssItems.append(rssItem)
+            if i in filter or feed_config.show_all:
+                rssItem = PyRSS2Gen.RSSItem(
+                    title=f"{'\u2B50' if i in filter else ''}{title}",
+                    link=f"{config.host}/update/{item.id}/1",
+                    description=f"{description}<br><br><a href='{config.host}/update/{item.id}/0'>Click To Dislike</a>",
+                    author=author,
+                    comments=comments,
+                    enclosure=enclosure,
+                    guid=guid,
+                    pubDate=pubDate,
+                    source=source,
+                )
+                rssItems.append(rssItem)
 
         rss = PyRSS2Gen.RSS2(
             title=f"{feed.feed.title} (RecoRSS)",
@@ -248,7 +249,9 @@ def generate():
             lastBuildDate=datetime.now(),
             items=rssItems,
         )
-        with open(f"/app/data/files/{directory}/feed.xml", "w", encoding="utf-8") as f:
+        with open(
+            f"/app/data/files/{feed_config.directory}/feed.xml", "w", encoding="utf-8"
+        ) as f:
             rss.write_xml(f)
 
     return "OK", 200
