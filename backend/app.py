@@ -13,7 +13,7 @@ import PyRSS2Gen
 import yaml
 from apscheduler.schedulers.background import BackgroundScheduler
 from feedparser import FeedParserDict
-from flask import Flask, send_from_directory
+from flask import Flask, redirect, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from openai import OpenAI
 from pydantic import BaseModel
@@ -38,6 +38,7 @@ class FeedConfig(BaseModel):
 
 class Config(BaseModel):
     quorom: int
+    host: str
     feeds: list[FeedConfig]
     models: dict[str, ModelConfig]
 
@@ -203,27 +204,49 @@ def generate():
             df["votes"] += preds * model.vote_weight
         filter = df.index[df["votes"] >= config.quorom]
         filtered_entries = [feed.entries[i] for i in filter]
-        items = []
+        rssItems = []
         for entry in filtered_entries:
-            item = PyRSS2Gen.RSSItem(
-                title=f"\u2B50 {entry.get("title")}",
-                link=entry.get("link"),
-                description=entry.get("description"),
-                author=entry.get("author"),
-                comments=entry.get("comments"),
-                enclosure=entry.get("enclosure"),
-                guid=entry.get("guid"),
-                pubDate=entry.get("pubDate"),
-                source=entry.get("source"),
+            title = entry.get("title")
+            link = entry.get("link")
+            description = entry.get("description")
+            author = entry.get("author")
+            comments = entry.get("comments")
+            enclosure = entry.get("enclosure")
+            guid = entry.get("guid")
+            pubDate = entry.get("guid")
+            source = entry.get("source")
+            item = Item(
+                title=title,
+                link=link,
+                description=description,
+                author=author,
+                comments=comments,
+                enclosure=enclosure,
+                guid=guid,
+                pubDate=pubDate,
+                source=source,
             )
-            items.append(item)
+            db.session.add(item)
+            db.session.commit()
+            rssItem = PyRSS2Gen.RSSItem(
+                title=f"\u2B50 {title}",
+                link=f"{config.host}/update/{item.id}/1",
+                description=f"{description}\n<a href='{config.host}/update/{item.id}/0'>Click To Dislike</a>",
+                author=author,
+                comments=comments,
+                enclosure=enclosure,
+                guid=guid,
+                pubDate=pubDate,
+                source=source,
+            )
+            rssItems.append(rssItem)
 
         rss = PyRSS2Gen.RSS2(
             title=f"{feed.feed.title} (RecoRSS)",
             link=feed.feed.link,
             description=feed.feed.description,
             lastBuildDate=datetime.now(),
-            items=items,
+            items=rssItems,
         )
         with open(f"/app/data/files/{directory}/feed.xml", "w", encoding="utf-8") as f:
             rss.write_xml(f)
@@ -248,6 +271,16 @@ def data():
 def root(subpath, filename):
     directory = os.path.join("/", "app", "data", "files", subpath)
     return send_from_directory(directory, filename)
+
+
+@app.route("/update/<int:id>/<int:value>", methods=["GET"])
+def link_handler(id, value):
+    item: Item = Item.query.get(id)
+    item.label = Label(value)
+    db.session.commit()
+    if item.label is Label.POSITIVE:
+        return redirect(item.link)
+    return "OK", 200
 
 
 ### Scheduled Task
