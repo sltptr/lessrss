@@ -33,6 +33,7 @@ class ModelConfig(BaseModel):
 
 class FeedConfig(BaseModel):
     url: str
+    directory: str
 
 
 class Config(BaseModel):
@@ -174,13 +175,9 @@ def load_tfidf():
 ### Routes
 
 
-def download_feed(url: str) -> FeedParserDict:
-    return feedparser.parse(url)
-
-
-def download_all() -> list[FeedParserDict]:
+def download_all() -> list[tuple[FeedParserDict, str]]:
     config = load_config()
-    return [download_feed(item.url) for item in config.feeds]
+    return [(feedparser.parse(item.url), item.directory) for item in config.feeds]
 
 
 def convert_to_dataframe(entries: list[FeedParserDict]):
@@ -192,52 +189,45 @@ def convert_to_dataframe(entries: list[FeedParserDict]):
 @app.route("/generate", methods=["GET"])
 def generate():
     config = load_config()
-    # (1) Load the models
     tfidf = TFIDFLogistic(config.models["tfidf"])
     gpt = GPT(config.models["gpt"])
     models = [tfidf, gpt]
-    # (2) Get the raw feeds and entries
-    raw_feeds = download_all()
-    raw_entries = []
-    for feed in raw_feeds:
-        raw_entries.extend(feed.entries)
-    # (3) Use the raw entries to create the input dataframe
-    df = convert_to_dataframe(raw_entries)
-    df["votes"] = 0
-    # (4) Use models to apply predictions, count votes and filter entries
-    for model in models:
-        if not model.active:
-            continue
-        model.load()
-        preds = model.run(df)
-        df["votes"] += preds * model.vote_weight
-    filter = df.index[df["votes"] >= config.quorom]
-    filtered_entries = [raw_entries[i] for i in filter]
-    # (5) Construct new RSS file
-    items = []
-    for entry in filtered_entries:
-        item = PyRSS2Gen.RSSItem(
-            title=entry.get("title"),
-            link=entry.get("link"),
-            description=entry.get("description"),
-            author=entry.get("author"),
-            comments=entry.get("comments"),
-            enclosure=entry.get("enclosure"),
-            guid=entry.get("guid"),
-            pubDate=entry.get("pubDate"),
-            source=entry.get("source"),
-        )
-        items.append(item)
+    for feed, directory in download_all():
+        df = convert_to_dataframe(feed.entries)
+        df["votes"] = 0
+        for model in models:
+            if not model.active:
+                continue
+            model.load()
+            preds = model.run(df)
+            df["votes"] += preds * model.vote_weight
+        filter = df.index[df["votes"] >= config.quorom]
+        filtered_entries = [feed.entries[i] for i in filter]
+        items = []
+        for entry in filtered_entries:
+            item = PyRSS2Gen.RSSItem(
+                title=entry.get("\u2B50 title"),
+                link=entry.get("link"),
+                description=entry.get("description"),
+                author=entry.get("author"),
+                comments=entry.get("comments"),
+                enclosure=entry.get("enclosure"),
+                guid=entry.get("guid"),
+                pubDate=entry.get("pubDate"),
+                source=entry.get("source"),
+            )
+            items.append(item)
 
-    rss = PyRSS2Gen.RSS2(
-        title="RecoRSS",
-        link="http://news.ycombinator.com",
-        description="This is a combined feed from multiple sources.",
-        lastBuildDate=datetime.now(),
-        items=items,
-    )
-    with open("/app/data/files/feed.xml", "w", encoding="utf-8") as f:
-        rss.write_xml(f)
+        rss = PyRSS2Gen.RSS2(
+            title=f"{feed.feed.title} (RecoRSS)",
+            link=feed.feed.link,
+            description=feed.feed.description,
+            lastBuildDate=datetime.now(),
+            items=items,
+        )
+        with open(f"/app/data/files/{directory}/feed.xml", "w", encoding="utf-8") as f:
+            rss.write_xml(f)
+
     return "OK", 200
 
 
@@ -254,9 +244,10 @@ def data():
 
 
 # Feed endpoint
-@app.route("/files/<path:filename>", methods=["GET"])
-def root(filename):
-    return send_from_directory("/app/data/files", filename)
+@app.route("/files/<path:subpath>/<filename>", methods=["GET"])
+def root(subpath, filename):
+    directory = os.path.join("/", "app", "data", "files", subpath)
+    return send_from_directory(directory, filename)
 
 
 ### Scheduled Task
