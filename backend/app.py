@@ -73,7 +73,7 @@ class Item(db.Model):
     __tablename__ = "item"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String, unique=True)
+    title: Mapped[str] = mapped_column(String, unique=True, index=True)
     link: Mapped[str]
     label: Mapped[Label] = mapped_column(default=Label.NONE)
     description: Mapped[Optional[str]]
