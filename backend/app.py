@@ -35,7 +35,7 @@ class FeedConfig(BaseModel):
     url: str
     show_all: bool
     directory: str
-    intent: Optional[str] = None
+    intent: Optional[str]
 
 
 class Config(BaseModel):
