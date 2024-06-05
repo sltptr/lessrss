@@ -35,7 +35,6 @@ class FeedConfig(BaseModel):
     url: str
     show_all: bool
     directory: str
-    intent: Optional[str]
 
 
 class Config(BaseModel):
@@ -219,8 +218,6 @@ def generate():
             existing_item = Item.query.filter_by(title=entry.title).first()
             if existing_item:
                 continue
-            if feed_config.intent:
-                link = f"<![CDATA[intent://{link.split("://")[1]}#Intent;scheme=https;package={feed_config.intent};S.browser_fallback_url={link};end]>"
             item = Item(
                 title=title,
                 link=link,
