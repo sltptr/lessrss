@@ -15,5 +15,5 @@ RUN python -m venv .venv && \
 
 COPY . .
 
-ENTRYPOINT ["/bin/bash", "-c", "source .venv/bin/activate && python workflows/tfidf.py"]
+CMD source .venv/inb/activate && python workflows/tfidf.py && cron && tail -f /var/log/cron.log
 
