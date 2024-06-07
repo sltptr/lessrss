@@ -25,13 +25,13 @@ class GPT(Model):
                 {
                     "role": "system",
                     "content": "You are an assistant who labels RSS feed items. \
-            The user will first give a description of their preferences for RSS items. \
-            The user will then give a list of titles for feed items, i.e. ['Post A', 'Post B', 'Post C']. \
-            You will then respond with a JSON array of 0s and 1s where 0 means you don't think the user \
-            would like the RSS item based on the title, and a 1 means you do think the user would \
-            like the item, i.e. [0,1,1] means you think the user wouldn't like Post A but you think \
-            that the user would likes Post B and Post C. The JSON response should be in the format \
-            {labels: []}.",
+                    The user will first give a description of their preferences for RSS items. \
+                    The user will then give a list of titles for feed items, i.e. ['Post A', 'Post B', 'Post C']. \
+                    You will then respond with a JSON array of 0s and 1s where 0 means you don't think the user \
+                    would like the RSS item based on the title, and a 1 means you do think the user would \
+                    like the item, i.e. [0,1,1] means you think the user wouldn't like Post A but you think \
+                    that the user would like Post B and Post C. The JSON response should be in the format \
+                    {labels: []}.",
                 },
                 {
                     "role": "user",

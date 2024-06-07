@@ -16,7 +16,6 @@ class Base(DeclarativeBase):
 class Label(enum.Enum):
     NEGATIVE = 0
     POSITIVE = 1
-    NONE = 2
 
 
 class Item(db.Model):
@@ -25,7 +24,7 @@ class Item(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String, unique=True, index=True)
     link: Mapped[str]
-    label: Mapped[Label] = mapped_column(default=Label.NONE)
+    label: Mapped[Optional[Label]]
     description: Mapped[Optional[str]]
     author: Mapped[Optional[str]]
     category: Mapped[Optional[str]]
