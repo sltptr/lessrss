@@ -1,7 +1,7 @@
 services:
-  backend:
-    build: ./backend
-    container_name: reco-rss-backend
+  main:
+    build: ./service
+    container_name: reco-rss-service
     ports:
       - 5000:5000
     volumes:
