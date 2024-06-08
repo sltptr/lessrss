@@ -1,0 +1,28 @@
+---
+quorom: 3
+host: "https://your.website.com"
+feeds:
+  - url: "https://feeds.bloomberg.com/markets/news.rss"
+    show_all: true
+    directory: "bloomberg"
+  - url: "https://news.ycombinator.com/rss"
+    show_all: true
+    directory: hacker_news
+  - url: "https://techcrunch.com/feed/"
+    show_all: false
+    directory: techcrunch
+models:
+  tfidf:
+    vote_weight: 1
+    active: true
+  distilbert:
+    vote_weight: 2
+    active: false
+  gpt:
+    vote_weight: 2
+    active: true
+    prompt: >
+      I'm interested in computing and science in general.
+      I do not like "listicles", i.e. articles that reference
+      lists of things in order to do SEO.
+

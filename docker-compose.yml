@@ -1,7 +1,7 @@
 services:
-  backend:
-    build: ./backend
-    container_name: reco-rss-backend
+  main:
+    build: ./service
+    container_name: reco-rss-service
     ports:
       - 5000:5000
     volumes:
@@ -10,3 +10,8 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     env_file:
       - .env
+  experiments:
+    build: ./experiments
+    container_name: "reco-rss-workflows"
+    volumes:
+      - ./data:/app/data

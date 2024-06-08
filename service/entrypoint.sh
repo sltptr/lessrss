@@ -1,4 +1,5 @@
 #!/bin/bash
 
+cron
 source /app/.venv/bin/activate
-exec python app.py
+exec python run.py

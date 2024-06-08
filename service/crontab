@@ -1,0 +1,2 @@
+* */4 * * * source /app/.venv/bin/activate && export PYTHONPATH=/app:$PYTHONPATH && python /app/scripts/generate.py >> /var/log/cron.log 2>&1
+
