@@ -12,8 +12,6 @@ class GPT(Model):
 
     def __init__(self, data: ModelConfig) -> None:
         super().__init__(data)
-
-    def load(self):
         OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
         self.client = OpenAI(api_key=OPENAI_API_KEY)
 

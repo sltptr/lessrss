@@ -42,6 +42,10 @@ class Item(db.Model):
 
     def serialize(self):
         return {
-            c: getattr(self, c) if c != "label" else getattr(self, c).name
+            c: (
+                getattr(self, c)
+                if c != "label"
+                else getattr(self, c).name if getattr(self, c) else None
+            )
             for c in inspect(self).attrs.keys()
         }

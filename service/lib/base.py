@@ -13,9 +13,5 @@ class Model(ABC):
         self.prompt = data.prompt
 
     @abstractmethod
-    def load(self):
-        pass
-
-    @abstractmethod
     def run(self, df: pd.DataFrame) -> np.array:
         pass

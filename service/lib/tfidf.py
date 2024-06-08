@@ -9,8 +9,6 @@ class TFIDFLogistic(Model):
 
     def __init__(self, data: ModelConfig) -> None:
         super().__init__(data)
-
-    def load(self):
         self.model: Pipeline = joblib.load("/app/data/ml_assets/tf-idf-logistic.joblib")
 
     def run(self, df):

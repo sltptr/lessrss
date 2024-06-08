@@ -20,8 +20,15 @@ def convert_to_dataframe(entries: list[FeedParserDict]):
 
 with app.app_context():
     config = load_config()
-    tfidf = TFIDFLogistic(config.models["tfidf"])
-    gpt = GPT(config.models["gpt"])
+    tfidf = gpt = None
+    try:
+        tfidf = TFIDFLogistic(config.models["tfidf"])
+    except Exception as e:
+        print(e)
+    try:
+        gpt = GPT(config.models["gpt"])
+    except Exception as e:
+        print(e)
     models = [tfidf, gpt]
     for feed, feed_config in [
         (feedparser.parse(item.url), item) for item in config.feeds
@@ -29,9 +36,8 @@ with app.app_context():
         df = convert_to_dataframe(feed.entries)
         df["votes"] = 0
         for model in models:
-            if not model.active:
+            if not model or not model.active:
                 continue
-            model.load()
             preds = model.run(df)
             df["votes"] += preds * model.vote_weight
         filter = set(df.index[df["votes"] >= config.quorom])
