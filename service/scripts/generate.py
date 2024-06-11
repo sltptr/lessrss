@@ -4,7 +4,7 @@ import feedparser
 import pandas as pd
 import PyRSS2Gen
 from app import create_app, db
-from app.models import Item
+from app.models import Item, Label
 from config.settings import load_config
 from feedparser import FeedParserDict
 from lib.gpt import GPT
@@ -62,6 +62,7 @@ with app.app_context():
             item = Item(
                 title=title,
                 link=link,
+                prediction=Label.POSITIVE if i in filter else Label.NEGATIVE,
                 description=description,
                 author=author,
                 comments=comments,
