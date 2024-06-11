@@ -9,6 +9,7 @@ from config.settings import load_config
 from feedparser import FeedParserDict
 from lib.gpt import GPT
 from lib.tfidf import TFIDFLogistic
+from utils.logging import logger
 
 app = create_app()
 
@@ -40,6 +41,9 @@ with app.app_context():
                 continue
             preds = model.run(df)
             df["votes"] += preds * model.vote_weight
+        logger.info(
+            f"Predictions: {[(row['title'], row['votes']) for _,row in df.iterrows()]}"
+        )
         filter = set(df.index[df["votes"] >= config.quorom])
         rssItems = []
         for i, entry in enumerate(feed.entries):

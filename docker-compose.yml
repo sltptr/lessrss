@@ -10,7 +10,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     env_file:
       - .env
-  experiments:
+  workflows:
     build: ./experiments
     container_name: "reco-rss-workflows"
     volumes:

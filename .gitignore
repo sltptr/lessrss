@@ -1,6 +1,6 @@
 **/.venv
 **/.ipynb_checkpoints
 **/__pycache__
-/data
-/experiments/notebooks/
-/.env
+data
+experiments/notebooks/results
+.env

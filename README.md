@@ -1,12 +1,12 @@
-# RecoRSS: Filtering for your RSS feeds
+# RecoRSS: recommendation RSS feeds
 
 ![RecoRSS Screenshot w/ FreshRSS](https://sltptr.github.io/static/images/recorss.png)
-![Project Status](https://img.shields.io/badge/status-InDevelopment-red.svg)
+![Project Status](https://img.shields.io/badge/Status-InDevelopment-red.svg)
 
 ## In Progress
-* Automated training workflow
-* DistilBERT classifier w/ fine tuning
-* Init DB script to quickly label a dataset of headlines
+
+- Automated training workflows
+- Script to quickly label a dataset of headlines
 
 ### Motivation
 

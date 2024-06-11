@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from utils.logging import logger
 
 db = SQLAlchemy()
 
@@ -13,4 +14,5 @@ def create_app():
 
         register_routes(app)
         db.create_all()
+    logger.info("App Created")
     return app
