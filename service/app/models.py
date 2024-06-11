@@ -45,7 +45,7 @@ class Item(db.Model):
         return {
             c: (
                 getattr(self, c)
-                if c != "label"
+                if c not in ("prediction", "label")
                 else getattr(self, c).name if getattr(self, c) else None
             )
             for c in inspect(self).attrs.keys()
