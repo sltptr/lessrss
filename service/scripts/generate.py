@@ -70,7 +70,7 @@ with app.app_context():
                 enclosure=enclosure,
                 guid=guid,
                 pubDate=pubDate,
-                source=source,
+                source=source if source else feed_config.url.split("//")[1],
             )
             db.session.add(item)
             db.session.commit()
