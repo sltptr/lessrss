@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import feedparser
@@ -94,6 +95,7 @@ with app.app_context():
             lastBuildDate=datetime.now(),
             items=rssItems,
         )
+        os.makedirs(feed_config.directory, exist_ok=True)
         with open(
             f"/app/data/files/{feed_config.directory}/feed.xml", "w", encoding="utf-8"
         ) as f:
