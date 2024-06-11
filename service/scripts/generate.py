@@ -95,8 +95,7 @@ with app.app_context():
             lastBuildDate=datetime.now(),
             items=rssItems,
         )
-        os.makedirs(feed_config.directory, exist_ok=True)
-        with open(
-            f"/app/data/files/{feed_config.directory}/feed.xml", "w", encoding="utf-8"
-        ) as f:
+        full_path = os.path.join("/app/data/files", feed_config.directory)
+        os.makedirs(full_path, exist_ok=True)
+        with open(os.path.join(full_path, "feed.xml"), "w", encoding="utf-8") as f:
             rss.write_xml(f)
