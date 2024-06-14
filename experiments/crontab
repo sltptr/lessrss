@@ -1,2 +1,0 @@
-* */8 * * * . /app/.venv/bin/activate && python /app/workflows/tfidf.py >> /var/log/cron.log 2>&1
-

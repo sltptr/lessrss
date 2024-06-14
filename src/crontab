@@ -1,0 +1,2 @@
+* */1 * * * . /app/server/.venv/bin/activate && export PYTHONPATH=/app:$PYTHONPATH && python /app/scripts/generate.py >> /var/log/cron.log 2>&1
+* */8 * * * . /app/workflows/.venv/bin/activate && python /app/workflows/tfidf.py >> /var/log/cron.log 2>&1

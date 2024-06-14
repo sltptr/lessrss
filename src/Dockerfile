@@ -7,13 +7,17 @@ COPY crontab /etc/cron.d/app-crontab
 RUN chmod 0644 /etc/cron.d/app-crontab && crontab /etc/cron.d/app-crontab && touch /var/log/cron.log
 
 COPY requirements.txt .
-
 RUN python -m venv .venv && \
     . .venv/bin/activate && \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 COPY . .
 
-CMD . .venv/bin/activate && python workflows/tfidf.py && cron && tail -f /var/log/cron.log
+EXPOSE 5000
+
+ENTRYPOINT ["/entrypoint.sh"]
 

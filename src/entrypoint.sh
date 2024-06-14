@@ -2,4 +2,4 @@
 
 cron
 source /app/.venv/bin/activate
-exec python run.py
+exec python -u run.py

@@ -1,6 +1,9 @@
+import logging
+import sys
+from logging import StreamHandler
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from utils.logging import logger
 
 db = SQLAlchemy()
 
@@ -14,5 +17,11 @@ def create_app():
 
         register_routes(app)
         db.create_all()
-    logger.info("App Created")
+    handler = StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(
+        logging.Formatter("[%(asctime)s] %(levelname)s in %(module)s: %(message)s")
+    )
+    app.logger.addHandler(handler)
+    app.logger.info("App Created")
     return app

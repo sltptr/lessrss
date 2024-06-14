@@ -2,9 +2,9 @@ import json
 import os
 
 import numpy as np
-from config.settings import ModelConfig
 from openai import OpenAI
-from utils.logging import logger
+
+from config.settings import ModelConfig
 
 from .base import Model
 
@@ -17,7 +17,6 @@ class GPT(Model):
         self.client = OpenAI(api_key=OPENAI_API_KEY)
 
     def run(self, df):
-        logger.info(f"Titles for GPT: {df.title.tolist()}")
         completion = self.client.chat.completions.create(
             model="gpt-4o",
             response_format={"type": "json_object"},
@@ -40,6 +39,5 @@ class GPT(Model):
                 },
             ],
         )
-        logger.info(f"GPT response: {completion.choices[0].message.content}")
         content_json = json.loads(completion.choices[0].message.content)
         return np.array(content_json["labels"])
