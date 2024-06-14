@@ -1,8 +1,9 @@
 import os
+from datetime import datetime
 
 import feedparser
 import pandas as pd
-from feedgen.feed import FeedGenerator
+import PyRSS2Gen as RSS
 
 from app import create_app, db
 from app.models import Item, Label
@@ -27,18 +28,31 @@ def load_models(config):
     return models
 
 
+# FeedParserDict uses special lagic to handle mapping keys
+# from Atom->RSS, and in this use case pandas cannot infer
+# all the necessary columns, which is why this method exists.
+def map_entries_dataframe(entries: feedparser.FeedParserDict):
+    keys = [
+        "title",
+        "link",
+        "description",
+        "author",
+        "comments",
+        "enclosure",
+        "guid",
+        "pubDate",
+        "source",
+    ]
+    mapped_entries = []
+    for entry in entries:
+        mapped_entries.append({key: entry.get(key) for key in keys})
+    return pd.DataFrame(mapped_entries)
+
+
 def filter(models, url, host, quorom):
     feed = feedparser.parse(url)
-    feed, entries = feed.feed, feed.entries
-    fg = FeedGenerator()
-    fg.id(feed.get("id"))
-    fg.title(feed.get("title"))
-    fg.author(feed.get("author"))
-    fg.link(href=feed.get("link"), rel="alternate")
-    fg.logo(feed.get("logo"))
-    fg.subtitle(feed.get("subtitle"))
-    fg.language(feed.get("language", "en"))
-    df = pd.DataFrame(entries)
+    channel, entries = feed["channel"], feed["items"]
+    df = map_entries_dataframe(entries)
     df["votes"] = 0
     for model in models:
         preds = model.run(df)
@@ -71,26 +85,28 @@ def filter(models, url, host, quorom):
             source=source,
         )
         if item.prediction is Label.POSITIVE:
-            items.append(item)
+            items.append(
+                RSS.RSSItem(
+                    title=f"{'\u2B50' if votes >= quorom else ''} {title}",
+                    link=f"{host}/update/{item.id}/1",
+                    description=f"{description}<br><br><a href='{host}/update/{item.id}/0'>Click To Dislike</a>",
+                    author=author,
+                    comments=comments,
+                    enclosure=enclosure,
+                    guid=guid,
+                    pubDate=pubDate,
+                    source=source,
+                )
+            )
         db.session.add(item)
     db.session.commit()
-    for item in items:
-        fe = fg.add_entry()
-        fe.id(item.id)
-        fe.title(
-            f"{'\u2B50' if item.prediction is Label.POSITIVE else ''} {item.title}"
-        )
-        fe.link(href=f"{host}/update/{item.id}/1")
-        fe.description(
-            f"{item.description}<br><br><a href='{host}/update/{item.id}/0'>Click To Dislike</a>"
-        )
-        fe.author(name=item.author)
-        fe.comments(item.comments)
-        fe.enclosure(item.enclosure)
-        fe.guid(str(item.guid))
-        fe.pubDate(item.pubDate)
-        fe.source(item.source)
-    return fg.rss_str(pretty=True).decode("utf-8")
+    return RSS.RSS2(
+        title=channel["title"],
+        link=channel["link"],
+        description=channel["description"],
+        lastBuildDate=datetime.now(),
+        items=items,
+    )
 
 
 def main():
@@ -98,11 +114,11 @@ def main():
         config = load_config()
         models = load_models(config)
         for feed_config in config.feeds:
-            rss = filter(models, feed_config.url, config.host, config.quorom)
+            rss2 = filter(models, feed_config.url, config.host, config.quorom)
             full_path = os.path.join("/app/data/files", feed_config.directory)
             os.makedirs(full_path, exist_ok=True)
             with open(os.path.join(full_path, "feed.xml"), "w", encoding="utf-8") as f:
-                f.write(rss)
+                rss2.write_xml(f)
 
 
 if __name__ == "__main__":
