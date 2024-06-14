@@ -90,7 +90,7 @@ def filter(models, url, host, quorom):
         fe.guid(str(item.guid))
         fe.pubDate(item.pubDate)
         fe.source(item.source)
-    return str(fg.rss_str(pretty=True))
+    return fg.rss_str(pretty=True).decode("utf-8")
 
 
 def main():
