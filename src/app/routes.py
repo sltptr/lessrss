@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask, redirect, send_from_directory
+from sqlalchemy import select
 
 from .database import Session
 from .models import Item, Label
@@ -12,7 +13,8 @@ def register_routes(app: Flask):
     @app.route("/data", methods=["GET"])
     def data():
         session = Session()
-        return [item.serialize() for item in session.query(Item).all()]
+        statement = select(Item)
+        return [item.serialize() for item in session.scalars(statement).all()]
 
     # Feeds endpoint
     @app.route("/files/<path:subpath>/<filename>", methods=["GET"])
@@ -24,7 +26,8 @@ def register_routes(app: Flask):
     def link_handler(id, value):
         session = Session()
         try:
-            item: Item = session.query(Item).get(id)
+            statement = select(Item).filter_by(id=id)
+            item: Item = session.scalars(statement).first()
             item.label = Label(value)
             session.commit()
             if item.label is Label.POSITIVE:
