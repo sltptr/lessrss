@@ -1,17 +1,21 @@
 services:
   main:
-    build: ./service
-    container_name: reco-rss-service
+    build: .
+    container_name: lessrss
     ports:
       - 5000:5000
     volumes:
-      - ./data:/app/data
+      - data:/data
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-    env_file:
-      - .env
-  experiments:
-    build: ./experiments
-    container_name: "reco-rss-workflows"
-    volumes:
-      - ./data:/app/data
+      - SQLALCHEMY_URL=${SQLALCHEMY_URL}
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /src
+          ignore:
+            - ./src/app/__pycache__/
+            - ./src/.venv/
+volumes:
+  data:
