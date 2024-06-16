@@ -4,7 +4,7 @@ from datetime import datetime
 import feedparser
 import pandas as pd
 import PyRSS2Gen as RSS
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine, create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Item, Label
@@ -40,76 +40,74 @@ def map_entries_dataframe(entries: feedparser.FeedParserDict) -> pd.DataFrame:
 
 def construct_rss_feed(
     models: list[Classifier], url: str, host: str, quorom: int, show_all: bool
-) -> RSS.RSS2:
+) -> RSS.RSS2 | None:
     session = Session()
-    feed: feedparser.FeedParserDict = feedparser.parse(url_file_stream_or_string=url)
-    channel, entries = feed["channel"], feed["items"]
-    df = map_entries_dataframe(entries)
-    df["votes"] = 0
-    for model in models:
-        preds = model.run(df)
-        df["votes"] += preds * model.vote_weight
-    items = []
-    for _, row in df.iterrows():
-        title = row.get("title")
-        link = row.get("link")
-        description = row.get("description")
-        author = row.get("author")
-        comments = row.get("comments")
-        enclosure = row.get("enclosure")
-        guid = row.get("guid")
-        pubDate = row.get("pubDate")
-        source = row.get("source", url.split("//")[1])
-        votes = row["votes"]
-        existing_item = session.query(Item).filter_by(title=title).first()
-        if existing_item:
-            continue
-        item = Item(
-            title=title,
-            link=link,
-            prediction=(Label.POSITIVE if votes >= quorom else Label.NEGATIVE),
-            description=description,
-            author=author,
-            comments=comments,
-            enclosure=enclosure,
-            guid=guid,
-            pubDate=pubDate,
-            source=source,
+    try:
+        feed: feedparser.FeedParserDict = feedparser.parse(
+            url_file_stream_or_string=url
         )
-        if item.prediction is Label.POSITIVE or show_all:
-            items.append(
-                RSS.RSSItem(
-                    title=f"{'\u2B50' if votes >= quorom else ''} {title}",
-                    link=f"{host}/update/{item.id}/1",
-                    description=f"{description}<br><br><a href='{host}/update/{item.id}/0'>Click To Dislike</a>",
-                    author=author,
-                    comments=comments,
-                    enclosure=enclosure,
-                    guid=guid,
-                    pubDate=pubDate,
-                    source=source,
-                )
+        channel, entries = feed["channel"], feed["items"]
+        df = map_entries_dataframe(entries)
+        df["votes"] = 0
+        for model in models:
+            preds = model.run(df)
+            df["votes"] += preds * model.vote_weight
+        items = []
+        for _, row in df.iterrows():
+            statement = select(Item).filter_by(title=row.get("title"))
+            if session.scalars(statement).all():
+                continue
+            item = Item(
+                title=row.get("title"),
+                link=row.get("link"),
+                description=row.get("description"),
+                author=row.get("author"),
+                comments=row.get("comments"),
+                enclosure=row.get("enclosure"),
+                guid=row.get("guid"),
+                pubDate=row.get("pubDate"),
+                source=row.get("source", url.split("//")[1]),
+                prediction=(
+                    Label.POSITIVE if row["votes"] >= quorom else Label.NEGATIVE
+                ),
             )
-        session.add(item)
-    session.commit()
-    return RSS.RSS2(
-        title=channel["title"],
-        link=channel["link"],
-        description=channel["description"],
-        lastBuildDate=datetime.now(),
-        items=items,
-    )
+            if item.prediction is Label.POSITIVE or show_all:
+                items.append(item)
+            session.add(item)
+        session.commit()
+        return RSS.RSS2(
+            title=channel["title"],
+            link=channel["link"],
+            description=channel["description"],
+            lastBuildDate=datetime.now(),
+            items=[
+                RSS.RSSItem(
+                    title=f"{'\u2B50' if item.prediction is Label.POSITIVE else ''} {item.title}",
+                    link=f"{host}/update/{item.id}/1",
+                    description=f"{item.description}<br><br><a href='{host}/update/{item.id}/0'>Click To Dislike</a>",
+                    author=item.author,
+                    comments=item.comments,
+                    enclosure=item.enclosure,
+                    guid=item.guid,
+                    pubDate=item.pubDate,
+                    source=item.source,
+                )
+                for item in items
+            ],
+        )
+    except:
+        session.rollback()
 
 
 def load_models(config: Config) -> list[Classifier]:
     models: list[Classifier] = []
-    for cls, config in [
+    for classifier, classifier_config in [
         (TFIDFLogistic, config.classifiers["tfidf"]),
         (GPT, config.classifiers["gpt"]),
     ]:
         try:
-            if config.active:
-                models.append(cls(config))
+            if classifier_config.active:
+                models.append(classifier(classifier_config))
         except Exception as e:
             print(e)
     return models
@@ -124,14 +122,15 @@ def main() -> None:
         with open(
             file=os.path.join(dir_path, "feed.xml"), mode="w", encoding="utf-8"
         ) as f:
-            rss_object: RSS.RSS2 = construct_rss_feed(
+            rss_object: RSS.RSS2 | None = construct_rss_feed(
                 models=models,
                 url=feed_config.url,
                 host=config.host,
                 quorom=config.quorom,
                 show_all=feed_config.show_all,
             )
-            rss_object.write_xml(outfile=f, encoding="utf-8")
+            if rss_object:
+                rss_object.write_xml(outfile=f, encoding="utf-8")
 
 
 if __name__ == "__main__":
