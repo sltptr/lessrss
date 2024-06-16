@@ -1,10 +1,5 @@
 FROM python:3.12-slim
 
-ARG OPENAI_API_KEY
-ENV OPENAI_API_KEY=${OPENAI_API_KEY}
-ARG SQLALCHEMY_URL
-ENV SQLALCHEMY_URL=${SQLALCHEMY_URL}
-
 RUN apt-get update && apt-get install -y cron && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src

@@ -6,6 +6,9 @@ services:
       - 5000:5000
     volumes:
       - data:/data
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SQLALCHEMY_URL=${SQLALCHEMY_URL}
     develop:
       watch:
         - action: sync
