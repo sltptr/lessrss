@@ -4,34 +4,23 @@ from datetime import datetime
 import feedparser
 import pandas as pd
 import PyRSS2Gen as RSS
+from sqlalchemy import Engine, create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
-from app import create_app, db
 from app.models import Item, Label
-from config.settings import load_config
+from lib.classifier import Classifier
+from lib.config import Config, load_config
 from lib.gpt import GPT
 from lib.tfidf import TFIDFLogistic
 
-app = create_app()
-
-
-def load_models(config):
-    models = []
-    for model_cls, model_config in [
-        (TFIDFLogistic, config.models["tfidf"]),
-        (GPT, config.models["gpt"]),
-    ]:
-        try:
-            if model_config.active:
-                models.append(model_cls(model_config))
-        except Exception as e:
-            print(e)
-    return models
+engine: Engine = create_engine(url=os.environ["SQLALCHEMY_URL"])
+Session = sessionmaker(bind=engine)
 
 
 # FeedParserDict uses special lagic to handle mapping keys
 # from Atom->RSS, and in this use case pandas cannot infer
 # all the necessary columns, which is why this method exists.
-def map_entries_dataframe(entries: feedparser.FeedParserDict):
+def map_entries_dataframe(entries: feedparser.FeedParserDict) -> pd.DataFrame:
     keys = [
         "title",
         "link",
@@ -49,8 +38,11 @@ def map_entries_dataframe(entries: feedparser.FeedParserDict):
     return pd.DataFrame(mapped_entries)
 
 
-def filter(models, url, host, quorom):
-    feed = feedparser.parse(url)
+def construct_rss_feed(
+    models: list[Classifier], url: str, host: str, quorom: int, show_all: bool
+) -> RSS.RSS2:
+    session = Session()
+    feed: feedparser.FeedParserDict = feedparser.parse(url_file_stream_or_string=url)
     channel, entries = feed["channel"], feed["items"]
     df = map_entries_dataframe(entries)
     df["votes"] = 0
@@ -69,7 +61,7 @@ def filter(models, url, host, quorom):
         pubDate = row.get("pubDate")
         source = row.get("source", url.split("//")[1])
         votes = row["votes"]
-        existing_item = Item.query.filter_by(title=title).first()
+        existing_item = session.query(Item).filter_by(title=title).first()
         if existing_item:
             continue
         item = Item(
@@ -84,7 +76,7 @@ def filter(models, url, host, quorom):
             pubDate=pubDate,
             source=source,
         )
-        if item.prediction is Label.POSITIVE:
+        if item.prediction is Label.POSITIVE or show_all:
             items.append(
                 RSS.RSSItem(
                     title=f"{'\u2B50' if votes >= quorom else ''} {title}",
@@ -98,8 +90,8 @@ def filter(models, url, host, quorom):
                     source=source,
                 )
             )
-        db.session.add(item)
-    db.session.commit()
+        session.add(item)
+    session.commit()
     return RSS.RSS2(
         title=channel["title"],
         link=channel["link"],
@@ -109,16 +101,37 @@ def filter(models, url, host, quorom):
     )
 
 
-def main():
-    with app.app_context():
-        config = load_config()
-        models = load_models(config)
-        for feed_config in config.feeds:
-            rss2 = filter(models, feed_config.url, config.host, config.quorom)
-            full_path = os.path.join("/app/data/files", feed_config.directory)
-            os.makedirs(full_path, exist_ok=True)
-            with open(os.path.join(full_path, "feed.xml"), "w", encoding="utf-8") as f:
-                rss2.write_xml(f)
+def load_models(config: Config) -> list[Classifier]:
+    models: list[Classifier] = []
+    for cls, config in [
+        (TFIDFLogistic, config.classifiers["tfidf"]),
+        (GPT, config.classifiers["gpt"]),
+    ]:
+        try:
+            if config.active:
+                models.append(cls(config))
+        except Exception as e:
+            print(e)
+    return models
+
+
+def main() -> None:
+    config: Config = load_config()
+    models: list[Classifier] = load_models(config)
+    for feed_config in config.feeds:
+        dir_path = os.path.join("/data/files", feed_config.directory)
+        os.makedirs(name=dir_path, exist_ok=True)
+        with open(
+            file=os.path.join(dir_path, "feed.xml"), mode="w", encoding="utf-8"
+        ) as f:
+            rss_object: RSS.RSS2 = construct_rss_feed(
+                models=models,
+                url=feed_config.url,
+                host=config.host,
+                quorom=config.quorom,
+                show_all=feed_config.show_all,
+            )
+            rss_object.write_xml(outfile=f, encoding="utf-8")
 
 
 if __name__ == "__main__":

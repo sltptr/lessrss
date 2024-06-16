@@ -10,7 +10,7 @@ from sklearn.pipeline import Pipeline
 
 
 def load_training_data():
-    conn = sqlite3.connect("/app/data/rss.db")
+    conn = sqlite3.connect("/data/rss.db")
     cur = conn.cursor()
     cur.execute("SELECT title,label FROM item WHERE label IS NOT Null")
     df = pd.DataFrame(cur.fetchall(), columns=["title", "label"])
@@ -28,7 +28,7 @@ try:
         df["title"], df["label"], test_size=0.2, random_state=42
     )
     pipeline.fit(X_train, y_train)
-    directory = "/app/data/ml_assets"
+    directory = "/data/models"
     os.makedirs(directory, exist_ok=True)
     file = os.path.join(directory, "tf-idf-logistic.joblib")
     joblib.dump(pipeline, file)

@@ -4,17 +4,15 @@ import os
 import numpy as np
 from openai import OpenAI
 
-from config.settings import ModelConfig
+from .classifier import Classifier
+from .config import ClassifierConfig
 
-from .base import Model
 
+class GPT(Classifier):
 
-class GPT(Model):
-
-    def __init__(self, data: ModelConfig) -> None:
+    def __init__(self, data: ClassifierConfig) -> None:
         super().__init__(data)
-        OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
-        self.client = OpenAI(api_key=OPENAI_API_KEY)
+        self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
     def run(self, df):
         completion = self.client.chat.completions.create(

@@ -1,15 +1,15 @@
 import joblib
-from config.settings import ModelConfig
 from sklearn.pipeline import Pipeline
 
-from .base import Model
+from .classifier import Classifier
+from .config import ClassifierConfig
 
 
-class TFIDFLogistic(Model):
+class TFIDFLogistic(Classifier):
 
-    def __init__(self, data: ModelConfig) -> None:
+    def __init__(self, data: ClassifierConfig) -> None:
         super().__init__(data)
-        self.model: Pipeline = joblib.load("/app/data/ml_assets/tf-idf-logistic.joblib")
+        self.model: Pipeline = joblib.load("/data/models/tf-idf-logistic.joblib")
 
     def run(self, df):
         return self.model.predict(df["title"])

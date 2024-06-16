@@ -1,20 +1,18 @@
 services:
   main:
-    build: ./src
+    build: .
     container_name: reco-rss
     ports:
       - 5000:5000
     volumes:
-      - ./data:/app/data
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    env_file:
-      - .env
+      - data:/data
     develop:
       watch:
         - action: sync
           path: ./src
-          target: /app
+          target: /src
           ignore:
             - ./src/app/__pycache__/
             - ./src/.venv/
+volumes:
+  data:

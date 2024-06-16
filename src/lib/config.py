@@ -1,13 +1,11 @@
-from typing import Optional
-
 import yaml
 from pydantic import BaseModel
 
 
-class ModelConfig(BaseModel):
+class ClassifierConfig(BaseModel):
     vote_weight: int
     active: bool
-    prompt: Optional[str] = None
+    prompt: str | None = None
 
 
 class FeedConfig(BaseModel):
@@ -20,10 +18,10 @@ class Config(BaseModel):
     quorom: int
     host: str
     feeds: list[FeedConfig]
-    models: dict[str, ModelConfig]
+    classifiers: dict[str, ClassifierConfig]
 
 
 def load_config() -> Config:
-    with open("/app/data/config.yml", "r") as file:
+    with open(file="/config/config.yml", mode="r") as file:
         config = yaml.safe_load(file)
     return Config(**config)

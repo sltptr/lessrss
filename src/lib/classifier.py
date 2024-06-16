@@ -2,12 +2,13 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
-from config.settings import ModelConfig
+
+from .config import ClassifierConfig
 
 
-class Model(ABC):
+class Classifier(ABC):
 
-    def __init__(self, data: ModelConfig) -> None:
+    def __init__(self, data: ClassifierConfig) -> None:
         self.vote_weight = data.vote_weight
         self.active = data.active
         self.prompt = data.prompt

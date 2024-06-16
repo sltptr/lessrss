@@ -1,0 +1,20 @@
+---
+quorom: 3
+host: "http://localhost:5000"
+feeds:
+  - url: "https://news.ycombinator.com/rss"
+    show_all: true
+    directory: hacker_news
+classifiers:
+  tfidf:
+    vote_weight: 1
+    active: true
+  distilbert:
+    vote_weight: 2
+    active: false
+  gpt:
+    vote_weight: 2
+    active: false
+    prompt: >
+      I do not like "listicles", i.e. articles that reference
+      lists of things in order to get better SEO.
