@@ -1,7 +1,7 @@
 services:
   main:
     build: .
-    container_name: reco-rss
+    container_name: lessrss
     ports:
       - 5000:5000
     volumes:
