@@ -1,2 +1,2 @@
 * */1 * * * . /etc/environment && . /src/.venv/bin/activate && export PYTHONPATH=/src && python /src/scripts/generate.py >> /var/log/cron.log 2>&1
-* */8 * * * . /etc/environment && . /src/.venv/bin/activate && python /src/scripts/train/tfidf.py >> /var/log/cron.log 2>&1
+* 0 * * * . /etc/environment && . /src/.venv/bin/activate && export PYTHONPATH=/src && python /src/scripts/train/tfidf.py >> /var/log/cron.log 2>&1

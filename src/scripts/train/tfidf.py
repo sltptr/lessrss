@@ -7,23 +7,26 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
+from sqlalchemy import Engine, create_engine, select
+from sqlalchemy.orm import sessionmaker
 
-
-def load_training_data():
-    conn = sqlite3.connect("/data/rss.db")
-    cur = conn.cursor()
-    cur.execute("SELECT title,label FROM item WHERE label IS NOT Null")
-    df = pd.DataFrame(cur.fetchall(), columns=["title", "label"])
-    df["label"] = df["label"].map({"NEGATIVE": 0, "POSITIVE": 1})
-    return df
-
-
-pipeline = Pipeline(
-    [("tfidf", TfidfVectorizer()), ("clf", LogisticRegression(class_weight="balanced"))]
-)
+from app.models import Item
 
 try:
-    df = load_training_data()
+    engine: Engine = create_engine(url=os.environ["SQLALCHEMY_URL"])
+    Session = sessionmaker(bind=engine)
+    with Session() as session:
+        statement = select(Item).where(Item.label != None)
+        items = session.scalars(statement).fetchall()
+        df = pd.DataFrame(
+            [[item.title, item.label] for item in items], columns=["title", "label"]
+        )
+    pipeline = Pipeline(
+        [
+            ("tfidf", TfidfVectorizer()),
+            ("clf", LogisticRegression(class_weight="balanced")),
+        ]
+    )
     X_train, X_test, y_train, y_test = train_test_split(
         df["title"], df["label"], test_size=0.2, random_state=42
     )
