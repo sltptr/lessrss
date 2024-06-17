@@ -10,6 +10,8 @@ RUN python -m venv .venv && \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
+RUN printenv > /etc/environment
+
 RUN mkdir /config
 COPY config /config
 
