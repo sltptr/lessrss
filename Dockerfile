@@ -20,6 +20,8 @@ COPY src/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 COPY src .
+RUN chmod +x /src/loadenv.sh
+
 
 EXPOSE 5000
 
