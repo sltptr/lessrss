@@ -16,6 +16,13 @@ def register_routes(app: Flask):
         statement = select(Item)
         return [item.serialize() for item in session.scalars(statement).all()]
 
+    # Quickly check only labeled content
+    @app.route("/data/labeled", methods=["GET"])
+    def labeled():
+        session = Session()
+        statement = select(Item).where(Item.label != None)
+        return [item.serialize() for item in session.scalars(statement).all()]
+
     # Feeds endpoint
     @app.route("/files/<path:subpath>/<filename>", methods=["GET"])
     def files(subpath, filename):
