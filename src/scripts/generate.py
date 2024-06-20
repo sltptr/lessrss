@@ -22,20 +22,22 @@ Session = sessionmaker(bind=engine)
 # from Atom->RSS, and in this use case pandas cannot infer
 # all the necessary columns, which is why this method exists.
 def map_entries_dataframe(entries: feedparser.FeedParserDict) -> pd.DataFrame:
-    keys = [
-        "title",
-        "link",
-        "description",
-        "author",
-        "comments",
-        "enclosure",
-        "guid",
-        "pubDate",
-        "source",
+    elements = [
+        ("title", "No title"),
+        ("link", ""),
+        ("description", ""),
+        ("author", ""),
+        ("comments", ""),
+        ("enclosure", ""),
+        ("guid", ""),
+        ("pubDate", ""),
+        ("source", ""),
     ]
     mapped_entries = []
     for entry in entries:
-        mapped_entries.append({key: entry.get(key) for key in keys})
+        mapped_entries.append(
+            {key: entry.get(key, default) for key, default in elements}
+        )
     return pd.DataFrame(mapped_entries)
 
 
@@ -93,11 +95,9 @@ def construct_rss_feed(
                     description=f"<a href='{host}/update/{item.id}/0'>Click To Dislike</a><br><br>{item.description}",
                     author=item.author,
                     comments=item.comments,
-                    enclosure=item.enclosure,
                     guid=item.guid,
                     pubDate=item.pubDate,
-                    source=item.source,
-                )
+                )  # Removed 'source' and 'enclosure' and file writes started working, at least once
                 for item in items
             ],
         )
