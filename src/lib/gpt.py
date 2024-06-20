@@ -15,7 +15,7 @@ class GPT(Classifier):
         self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
     def run(self, df):
-        titles = {i: title for i, title in enumerate(df.title.tolist())}
+        titles = {str(i): title for i, title in enumerate(df.title.tolist())}
         completion = self.client.chat.completions.create(
             model="gpt-4o",
             response_format={"type": "json_object"},
@@ -23,12 +23,15 @@ class GPT(Classifier):
                 {
                     "role": "system",
                     "content": f"""You are an assistant who labels RSS feed items based on user preferences.
-                    Here is a description of the user's preferences: '{self.prompt}'.
-                    The user will give you a JSON map of integer ID's to string titles.
-                    You must return a JSON map of integer ID's to integer labels which are either 0's or 1's.
-                    For example, your response should look like {{ 0: 1, 1: 1, 2: 0 }} if you think
-                    the user would like the items 0 and 1 but you think the user wouldn't like item 2.
-                    """,
+                        The user will give you a map of ID's to string titles, an example input might look
+                        like {{ '0': 'New science about the Earth', '1': 'Fun ways to spend your summer', '2': 'Top 10 tourist destinations' }}.
+                        You must return a JSON map for the ID's to integer labels which are either 0's or 1's.
+                        For example, your response should look like {{ '0': 1, '1': 1, '2': 0 }} if you think
+                        the user would like the items 0 and 1 but you think the user wouldn't like item 2.
+                        For another input, you might respond {{ '0': 0, '1': 1, '2': 0, '3': 1 }} if you think the
+                        user would like the items 1 and 3 but wouldn't like the items 0 and 2.
+                        To help you label, here is a description of the user's preferences: '{self.prompt}'.
+                        """,
                 },
                 {
                     "role": "user",

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.models import Item, Label
 from lib.classifier import Classifier
 from lib.config import Config, load_config
+from lib.constant import Constant
 from lib.gpt import GPT
 from lib.tfidf import TFIDFLogistic
 
@@ -51,7 +52,6 @@ def construct_rss_feed(
         df["votes"] = 0
         for model in models:
             preds = model.run(df)
-            print(f"Predictions -> {channel["title"]} + {model}: {preds}")
             df["votes"] += preds * model.vote_weight
         items = []
         for _, row in df.iterrows():
@@ -90,7 +90,7 @@ def construct_rss_feed(
                 RSS.RSSItem(
                     title=f"{'\u2B50' if item.prediction is Label.POSITIVE else ''} {item.title}",
                     link=f"{host}/update/{item.id}/1",
-                    description=f"{item.description}<br><br><a href='{host}/update/{item.id}/0'>Click To Dislike</a>",
+                    description=f"<a href='{host}/update/{item.id}/0'>Click To Dislike</a><br><br>{item.description}",
                     author=item.author,
                     comments=item.comments,
                     enclosure=item.enclosure,
@@ -117,6 +117,7 @@ def load_models(config: Config) -> list[Classifier]:
             models.append(classifier(classifier_config))
         except Exception as e:
             print(e)
+            models.append(Constant(classifier_config, True))
     print(f"Loaded models: {models}")
     return models
 
@@ -124,9 +125,6 @@ def load_models(config: Config) -> list[Classifier]:
 def main() -> None:
     config: Config = load_config()
     models: list[Classifier] = load_models(config)
-    if not models:
-        print("Either no active models or all models failed to load")
-        return
     for feed_config in config.feeds:
         dir_path = os.path.join("/data/files", feed_config.directory)
         os.makedirs(name=dir_path, exist_ok=True)
@@ -137,12 +135,6 @@ def main() -> None:
             quorom=config.quorom,
             show_all=feed_config.show_all,
         )
-        if not rss_object:
-            print("No object returned")
-            continue
-        elif not rss_object.items:
-            print("No items to write")
-            continue
         with open(
             file=os.path.join(dir_path, "feed.xml"), mode="w", encoding="utf-8"
         ) as f:
