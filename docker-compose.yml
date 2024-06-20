@@ -17,5 +17,6 @@ services:
           ignore:
             - ./src/app/__pycache__/
             - ./src/.venv/
+    restart: always
 volumes:
   data:
