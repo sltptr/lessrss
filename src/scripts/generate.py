@@ -79,11 +79,7 @@ def create_items(df: DataFrame, feed_config: FeedConfig) -> list[Item] | None:
                 guid=row.get("guid"),
                 pubDate=row.get("pubDate"),
                 source=row.get("source", feed_config.url.split("//")[1]),
-                prediction=(
-                    Label.POSITIVE
-                    if row["votes"] >= feed_config.quorom
-                    else Label.NEGATIVE
-                ),
+                prediction=(Label.POSITIVE if row["prediction"] else Label.NEGATIVE),
             )
             if item.prediction is Label.POSITIVE or feed_config.show_all:
                 items.append(item)
@@ -127,6 +123,10 @@ def main() -> None:
         for model in models:
             preds = model.run(df)
             df["votes"] += preds * model.vote_weight
+        df["prediction"] = df["votes"] >= feed_config.quorom
+        print(
+            f"Predictions for {feed_config.directory}:\n{df[["title", "votes", "prediction"]]}"
+        )
         try:
             items = create_items(df, feed_config)
             if not items:
