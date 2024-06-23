@@ -12,10 +12,10 @@ class FeedConfig(BaseModel):
     url: str
     show_all: bool
     directory: str
+    quorom: int
 
 
 class Config(BaseModel):
-    quorom: int
     host: str
     feeds: list[FeedConfig]
     classifiers: dict[str, ClassifierConfig]
