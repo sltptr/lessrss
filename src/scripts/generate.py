@@ -62,29 +62,28 @@ def session_scope():
         session.close()
 
 
-def create_items(df: DataFrame, feed_config: FeedConfig) -> list[Item] | None:
-    with session_scope() as session:
-        items = []
-        for _, row in df.iterrows():
-            statement = select(Item).filter_by(title=row.get("title"))
-            if session.scalars(statement).all():
-                continue
-            item = Item(
-                title=row.get("title"),
-                link=row.get("link"),
-                description=row.get("description"),
-                author=row.get("author"),
-                comments=row.get("comments"),
-                enclosure=row.get("enclosure"),
-                guid=row.get("guid"),
-                pubDate=row.get("pubDate"),
-                source=row.get("source", feed_config.url.split("//")[1]),
-                prediction=(Label.POSITIVE if row["prediction"] else Label.NEGATIVE),
-            )
-            if item.prediction is Label.POSITIVE or feed_config.show_all:
-                items.append(item)
-            session.add(item)
-        return items
+def create_items(df: DataFrame, feed_config: FeedConfig, session) -> list[Item] | None:
+    items = []
+    for _, row in df.iterrows():
+        statement = select(Item).filter_by(title=row.get("title"))
+        if session.scalars(statement).all():
+            continue
+        item = Item(
+            title=row.get("title"),
+            link=row.get("link"),
+            description=row.get("description"),
+            author=row.get("author"),
+            comments=row.get("comments"),
+            enclosure=row.get("enclosure"),
+            guid=row.get("guid"),
+            pubDate=row.get("pubDate"),
+            source=row.get("source", feed_config.url.split("//")[1]),
+            prediction=(Label.POSITIVE if row["prediction"] else Label.NEGATIVE),
+        )
+        if item.prediction is Label.POSITIVE or feed_config.show_all:
+            items.append(item)
+        session.add(item)
+    return items
 
 
 def create_feed(channel_dict: FeedParserDict, items: list[Item], dir_path: str):
@@ -128,11 +127,12 @@ def main() -> None:
             f"Predictions for {feed_config.directory}:\n{df[["title", "votes", "prediction"]]}"
         )
         try:
-            items = create_items(df, feed_config)
-            if not items:
-                print(f"Missing items for feed: {feed_config.directory}")
-                continue
-            create_feed(channel, items, dir_path)
+            with session_scope() as session:
+                items = create_items(df, feed_config, session)
+                if not items:
+                    print(f"Missing items for feed: {feed_config.directory}")
+                    continue
+                create_feed(channel, items, dir_path)
         except Exception as e:
             print(e)
 
