@@ -54,7 +54,6 @@ def session_scope():
     session = Session()
     try:
         yield session
-        session.commit()
     except Exception:
         session.rollback()
         raise
@@ -83,10 +82,13 @@ def create_items(df: DataFrame, feed_config: FeedConfig, session) -> list[Item] 
         if item.prediction is Label.POSITIVE or feed_config.show_all:
             items.append(item)
         session.add(item)
+    session.commit()
     return items
 
 
-def create_feed(channel_dict: FeedParserDict, items: list[Item], dir_path: str):
+def create_feed(
+    channel_dict: FeedParserDict, items: list[Item], host: str, dir_path: str
+):
     rss = ET.Element("rss")
     rss.set("version", "2.0")
 
@@ -99,7 +101,16 @@ def create_feed(channel_dict: FeedParserDict, items: list[Item], dir_path: str):
         item_element = ET.SubElement(channel, "item")
         for key, default in ITEM_PAIRS:
             element = ET.SubElement(item_element, key)
-            element.text = getattr(item, key, default)
+            if key == "title":
+                element.text = f"{'&#11088;' if item.prediction is Label.POSITIVE else ' '} {item.title}"
+            elif key == "link":
+                element.text = (
+                    f"{host}/update/{item.id}/1"  # Maybe change host to an envvar
+                )
+            elif key == "description":
+                element.text = f"<a href='{host}/update/{item.id}/0'>Click To Dislike</a><br><br>{item.description}"
+            else:
+                element.text = getattr(item, key, default)
 
     tree = ET.ElementTree(rss)
 
@@ -111,8 +122,6 @@ def main() -> None:
     config: Config = load_config()
     models: list[Classifier] = load_models(config)
     for feed_config in config.feeds:
-        dir_path = os.path.join("/data/files", feed_config.directory)
-        os.makedirs(name=dir_path, exist_ok=True)
         feed: FeedParserDict = feedparser.parse(
             url_file_stream_or_string=feed_config.url
         )
@@ -132,7 +141,9 @@ def main() -> None:
                 if not items:
                     print(f"Missing items for feed: {feed_config.directory}")
                     continue
-                create_feed(channel, items, dir_path)
+                dir_path = os.path.join("/data/files", feed_config.directory)
+                os.makedirs(name=dir_path, exist_ok=True)
+                create_feed(channel, items, config.host, dir_path)
         except Exception as e:
             print(e)
 
