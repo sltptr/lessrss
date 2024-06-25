@@ -1,6 +1,6 @@
 from flask import Flask
 
-from .database import Session, engine
+from .database import engine
 from .models import Base
 from .routes import register_routes
 

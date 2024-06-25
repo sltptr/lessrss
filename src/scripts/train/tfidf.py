@@ -1,5 +1,4 @@
 import os
-import sqlite3
 
 import joblib
 import pandas as pd
@@ -10,16 +9,20 @@ from sklearn.pipeline import Pipeline
 from sqlalchemy import Engine, create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from app.models import Item
+from app.models import Item, Label
+
+engine: Engine = create_engine(url=os.environ["SQLALCHEMY_URL"])
+Session = sessionmaker(bind=engine)
 
 try:
-    engine: Engine = create_engine(url=os.environ["SQLALCHEMY_URL"])
-    Session = sessionmaker(bind=engine)
     with Session() as session:
         statement = select(Item).where(Item.label != None)
-        items = session.scalars(statement).fetchall()
+        items = session.scalars(statement).all()
         df = pd.DataFrame(
-            [[item.title, item.label] for item in items], columns=["title", "label"]
+            [
+                {"title": item.title, "label": 1 if item.label is Label.POSITIVE else 0}
+                for item in items
+            ]
         )
     pipeline = Pipeline(
         [
