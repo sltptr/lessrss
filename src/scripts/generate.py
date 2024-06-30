@@ -6,7 +6,7 @@ import feedparser
 import pandas as pd
 from feedparser import FeedParserDict
 from pandas import DataFrame
-from sqlalchemy import Engine, create_engine, select
+from sqlalchemy import Engine, create_engine, exists, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Item, Label
@@ -48,6 +48,15 @@ def map_entries_dataframe(entries: feedparser.FeedParserDict) -> pd.DataFrame:
     return pd.DataFrame(mapped_entries)
 
 
+def filter_seen_entries(df: pd.DataFrame, session) -> pd.DataFrame:
+
+    def title_exists(title):
+        return session.query(exists().where(Item.title == title)).scalar()
+
+    filtered_titles = [title for title in df["title"] if not title_exists(title)]
+    return df[df["title"].isin(filtered_titles)]
+
+
 @contextmanager
 def session_scope():
     """Provide a transactional scope around a series of operations."""
@@ -64,9 +73,6 @@ def session_scope():
 def create_items(df: DataFrame, feed_config: FeedConfig, session) -> list[Item] | None:
     items = []
     for _, row in df.iterrows():
-        statement = select(Item).filter_by(title=row.get("title"))
-        if session.scalars(statement).all():
-            continue
         item = Item(
             title=row.get("title"),
             link=row.get("link"),
@@ -130,16 +136,20 @@ def main() -> None:
             print(f"No entries for {feed_config.url}")
             continue
         df = map_entries_dataframe(entries)
-        df["votes"] = 0
-        for model in models:
-            preds = model.run(df)
-            df["votes"] += preds * model.vote_weight
-        df["prediction"] = df["votes"] >= feed_config.quorom
-        print(
-            f"Predictions for {feed_config.directory}:\n{df[["title", "votes", "prediction"]]}"
-        )
         try:
             with session_scope() as session:
+                df = filter_seen_entries(df, session)
+                if len(df) == 0:
+                    print(f"No new entries for {feed_config.url}")
+                    continue
+                df["votes"] = 0
+                for model in models:
+                    preds = model.run(df)
+                    df["votes"] += preds * model.vote_weight
+                df["prediction"] = df["votes"] >= feed_config.quorom
+                print(
+                    f"Predictions for {feed_config.directory}:\n{df[["title", "votes", "prediction"]]}"
+                )
                 items = create_items(df, feed_config, session)
                 if not items:
                     print(f"Missing items for feed: {feed_config.directory}")
