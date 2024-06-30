@@ -3,6 +3,7 @@ import yaml
 from lib.classifier import Classifier
 from lib.config import Config
 from lib.constant import Constant
+from lib.distilbert import DistilBERT
 from lib.gpt import GPT
 from lib.tfidf import TFIDFLogistic
 
@@ -18,6 +19,7 @@ def load_models(config: Config) -> list[Classifier]:
     classifier_definitions = [
         (TFIDFLogistic, config.classifiers["tfidf"]),
         (GPT, config.classifiers["gpt"]),
+        (DistilBERT, config.classifiers["distilbert"]),
     ]
     for classifier_class, classifier_config in classifier_definitions:
         if not classifier_config.active:

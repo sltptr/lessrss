@@ -4,5 +4,6 @@
 config/config.yml
 config/secrets.env
 data
+models
 experiments/notebooks/results
 .env

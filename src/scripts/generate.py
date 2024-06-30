@@ -126,6 +126,9 @@ def main() -> None:
             url_file_stream_or_string=feed_config.url
         )
         channel, entries = feed["channel"], feed["entries"]
+        if not entries:
+            print(f"No entries for {feed_config.url}")
+            continue
         df = map_entries_dataframe(entries)
         df["votes"] = 0
         for model in models:

@@ -10,9 +10,6 @@ RUN python -m venv .venv && \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-RUN mkdir /config
-COPY config /config
-
 COPY src/crontab /etc/cron.d/app-crontab
 RUN chmod 0644 /etc/cron.d/app-crontab && crontab /etc/cron.d/app-crontab && touch /var/log/cron.log
 
