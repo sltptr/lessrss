@@ -15,27 +15,30 @@ class GPT(Classifier):
         self.client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
     def run(self, df):
+        titles = {str(i): title for i, title in enumerate(df.title.tolist())}
         completion = self.client.chat.completions.create(
             model="gpt-4o",
             response_format={"type": "json_object"},
             messages=[
                 {
                     "role": "system",
-                    "content": """You are an assistant who labels RSS feed items.
-                    The user will first give a description of their preferences for RSS items.
-                    The user will then give a list of titles for feed items, i.e. ['Post A', 'Post B', 'Post C'].
-                    You will then respond with a JSON array of 0s and 1s where 0 means you don't think the user
-                    would like the RSS item based on the title, and a 1 means you do think the user would
-                    like the item, i.e. [0,1,1] means you think the user wouldn't like Post A but you think
-                    that the user would like Post B and Post C. The JSON response should be in the format
-                    {labels: []}.""",
+                    "content": f"""You are an assistant who labels RSS feed items based on user preferences.
+                        The user will give you a map of ID's to string titles, an example input might look
+                        like {{ '0': 'New science about the Earth', '1': 'Fun ways to spend your summer', '2': 'Top 10 tourist destinations' }}.
+                        You must return a JSON map for the ID's to integer labels which are either 0's or 1's.
+                        For example, your response should look like {{ '0': 1, '1': 1, '2': 0 }} if you think
+                        the user would like the items 0 and 1 but you think the user wouldn't like item 2.
+                        For another input, you might respond {{ '0': 0, '1': 1, '2': 0, '3': 1 }} if you think the
+                        user would like the items 1 and 3 but wouldn't like the items 0 and 2.
+                        To help you label, here is a description of the user's preferences: '{self.prompt}'.
+                        """,
                 },
                 {
                     "role": "user",
-                    "content": f"""The following is the description of my preferences for RSS items: {self.prompt}.
-                    Here is the list of {df.shape[0]} titles that I need you to process: {df.title.tolist()}.""",
+                    "content": str(titles),
                 },
             ],
         )
         content_json = json.loads(completion.choices[0].message.content)
-        return np.array(content_json["labels"])
+        print(f"Response from GPT: {content_json}")
+        return np.array([content_json[id] for id in sorted(content_json.keys())])

@@ -1,10 +1,10 @@
 ---
-quorom: 3
 host: "http://localhost:5000"
 feeds:
   - url: "https://news.ycombinator.com/rss"
     show_all: true
     directory: hacker_news
+    quorom: 3
 classifiers:
   tfidf:
     vote_weight: 1

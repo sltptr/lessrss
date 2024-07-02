@@ -6,6 +6,8 @@ services:
       - 5000:5000
     volumes:
       - data:/data
+      - ./config:/config
+      - ./models:/models
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SQLALCHEMY_URL=${SQLALCHEMY_URL}
@@ -17,5 +19,7 @@ services:
           ignore:
             - ./src/app/__pycache__/
             - ./src/.venv/
+    restart: always
 volumes:
   data:
+  config:
