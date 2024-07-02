@@ -6,7 +6,7 @@ import feedparser
 import pandas as pd
 from feedparser import FeedParserDict
 from pandas import DataFrame
-from sqlalchemy import Engine, create_engine, exists, select
+from sqlalchemy import Engine, create_engine, exists
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.models import Item, Label
