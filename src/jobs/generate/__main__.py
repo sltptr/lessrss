@@ -1,6 +1,5 @@
 import os
 import xml.etree.ElementTree as ET
-from contextlib import contextmanager
 
 import feedparser
 import pandas as pd
@@ -55,19 +54,6 @@ def filter_seen_entries(df: pd.DataFrame, session) -> pd.DataFrame:
 
     filtered_titles = [title for title in df["title"] if not title_exists(title)]
     return df[df["title"].isin(filtered_titles)]
-
-
-@contextmanager
-def session_scope():
-    """Provide a transactional scope around a series of operations."""
-    session = Session()
-    try:
-        yield session
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
 
 
 def create_items(df: DataFrame, feed_config: FeedConfig, session) -> list[Item] | None:
@@ -137,7 +123,7 @@ def main() -> None:
             continue
         df = map_entries_dataframe(entries)
         try:
-            with session_scope() as session:
+            with Session() as session:
                 df = filter_seen_entries(df, session)
                 if len(df) == 0:
                     print(f"No new entries for {feed_config.url}")
@@ -145,11 +131,8 @@ def main() -> None:
                 df["votes"] = 0
                 for model in models:
                     preds = model.run(df)
-                    df["votes"] += preds * model.vote_weight
+                    df["votes"] += preds * model.weight
                 df["prediction"] = df["votes"] >= feed_config.quorom
-                print(
-                    f"Predictions for {feed_config.directory}:\n{df[["title", "votes", "prediction"]]}"
-                )
                 items = create_items(df, feed_config, session)
                 if not items:
                     print(f"Missing items for feed: {feed_config.directory}")
