@@ -69,12 +69,14 @@ def create_items(df: DataFrame, feed_config: FeedConfig, session) -> list[Item] 
             guid=row.get("guid"),
             pubDate=row.get("pubDate"),
             source=row.get("source", feed_config.url.split("//")[1]),
-            prediction=(Label.POSITIVE if row["prediction"] else Label.NEGATIVE),
+            prediction=row.get("prediction"),
         )
+        print(item.prediction)
         if item.prediction is Label.POSITIVE or feed_config.show_all:
             items.append(item)
         session.add(item)
     session.commit()
+    print(items)
     return items
 
 
@@ -114,6 +116,9 @@ def main() -> None:
     config: Config = load_config()
     models: list[Classifier] = load_models(config)
     for feed_config in config.feeds:
+        quorom = feed_config.quorom
+        if not quorom:
+            quorom = config.quorom
         feed: FeedParserDict = feedparser.parse(
             url_file_stream_or_string=feed_config.url
         )
@@ -132,7 +137,9 @@ def main() -> None:
                 for model in models:
                     preds = model.run(df)
                     df["votes"] += preds * model.weight
-                df["prediction"] = df["votes"] >= feed_config.quorom
+                df["prediction"] = pd.Series(df["votes"] >= quorom).map(
+                    lambda x: Label.POSITIVE if x else Label.NEGATIVE
+                )
                 items = create_items(df, feed_config, session)
                 if not items:
                     print(f"Missing items for feed: {feed_config.directory}")

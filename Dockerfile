@@ -1,4 +1,4 @@
-FROM python:3.9-slim
+FROM python:3.10-slim
 
 WORKDIR /src
 
@@ -16,7 +16,8 @@ RUN python -m venv .venv && \
     pip install --no-cache-dir -r requirements.txt
 
 COPY src/crontab /etc/cron.d/app-crontab
-RUN chmod 0644 /etc/cron.d/app-crontab && crontab /etc/cron.d/app-crontab && touch /var/log/cron.log
+RUN chmod 0644 /etc/cron.d/app-crontab && crontab /etc/cron.d/app-crontab && \
+mkdir -p /var/log/cron/generate /var/log/cron/tfidf /var/log/cron/distilbert
 
 COPY src/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
