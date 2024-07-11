@@ -8,10 +8,9 @@ from .config import ClassifierConfig
 
 class Classifier(ABC):
 
-    def __init__(self, data: ClassifierConfig) -> None:
-        self.vote_weight = data.vote_weight
-        self.active = data.active
-        self.prompt = data.prompt
+    def __init__(self, data: ClassifierConfig):
+        self.weight = data.weight
+        self.classifier_active = data.classifier_active
 
     @abstractmethod
     def run(self, df: pd.DataFrame) -> np.array:

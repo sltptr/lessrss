@@ -2,4 +2,4 @@
 
 . /etc/environment
 . /src/.venv/bin/activate
-export PYTHONPATH=/src
+export PYTHONPATH=/src:/src/jobs

@@ -3,22 +3,23 @@ from pydantic import BaseModel
 
 
 class ClassifierConfig(BaseModel):
-    vote_weight: int
-    active: bool
-    prompt: str | None = None
+    weight: int
+    classifier_active: bool = True
 
 
 class FeedConfig(BaseModel):
     url: str
-    show_all: bool
     directory: str
-    quorom: int
+    show_all: bool = False
+    quorom: int | None = None
 
 
 class Config(BaseModel):
     host: str
+    quorom: int
     feeds: list[FeedConfig]
     classifiers: dict[str, ClassifierConfig]
+    filter_active: bool = True
 
 
 def load_config() -> Config:

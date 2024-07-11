@@ -1,20 +1,18 @@
 ---
-host: "http://localhost:5000"
+host: https://www.yoursite.com
+quorom: 1
 feeds:
-  - url: "https://news.ycombinator.com/rss"
-    show_all: true
+  - url: https://feeds.bloomberg.com/markets/news.rss
+    directory: bloomberg/markets
+  - url: https://news.ycombinator.com/rss
     directory: hacker_news
+  - url: https://techcrunch.com/feed
+    directory: techcrunch
     quorom: 3
 classifiers:
   tfidf:
-    vote_weight: 1
-    active: true
+    weight: 1
+    classifier_active: true
   distilbert:
-    vote_weight: 2
-    active: false
-  gpt:
-    vote_weight: 2
-    active: false
-    prompt: >
-      I do not like "listicles", i.e. articles that reference
-      lists of things in order to get better SEO.
+    weight: 2
+    classifier_active: false

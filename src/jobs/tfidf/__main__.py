@@ -38,5 +38,6 @@ try:
     os.makedirs(directory, exist_ok=True)
     file = os.path.join(directory, "tf-idf-logistic.joblib")
     joblib.dump(pipeline, file)
+    print("Fitted TFIDF pipeline")
 except Exception as e:
     print(e)
