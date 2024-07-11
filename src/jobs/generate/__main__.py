@@ -71,12 +71,10 @@ def create_items(df: DataFrame, feed_config: FeedConfig, session) -> list[Item] 
             source=row.get("source", feed_config.url.split("//")[1]),
             prediction=row.get("prediction"),
         )
-        print(item.prediction)
         if item.prediction is Label.POSITIVE or feed_config.show_all:
             items.append(item)
         session.add(item)
     session.commit()
-    print(items)
     return items
 
 
