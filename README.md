@@ -1,5 +1,7 @@
-<img src="https://sltptr.github.io/static/images/LessRssLogo.png" 
-  alt="Less RSS Logo" style="max-width: 60%; width: 600px; height: auto;" align="center">
+<div style="display: flex; justify-content: center;">
+  <img src="https://sltptr.github.io/static/images/LessRssLogo.png" 
+    alt="Less RSS Logo" style="max-width: 60%; width: 600px; height: auto;">
+</div>
 
 <h3 align="center">Get fewer, better feed items.</h3>
 
