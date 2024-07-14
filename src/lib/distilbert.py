@@ -16,6 +16,10 @@ class DistilBERT(Classifier):
         self.device = (
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
+        if not torch.cuda.is_available():
+            self.model = torch.quantization.quantize_dynamic(
+                self.model, {torch.nn.Linear}, dtype=torch.qint8
+            )
         self.model.to(self.device)
         self.model.eval()
         self.tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
@@ -23,8 +27,11 @@ class DistilBERT(Classifier):
     def run(self, df):
 
         def infer(title):
-            encodings = self.tokenizer(title, return_tensors="pt")
-            output = self.model(**encodings)
+            encodings = self.tokenizer(
+                title, return_tensors="pt", padding=True, truncation=True
+            )
+            with torch.no_grad():
+                output = self.model(**encodings)
             return torch.argmax(F.softmax(output.logits, dim=1)).item()
 
         return df["title"].map(infer).to_numpy()
