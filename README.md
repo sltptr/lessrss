@@ -1,4 +1,4 @@
-<img src="https://sltptr.github.io/static/images/LessRssLogo.png" alt="Less RSS Logo" style="max-width: 75%; height: auto;">
+<img src="https://sltptr.github.io/static/images/LessRssLogo.png" alt="Less RSS Logo" style="max-width: 60%; width: 600px; height: auto;">
 
 <h3 align="center">Get fewer, better feed items.</h3>
 
