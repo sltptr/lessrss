@@ -1,8 +1,6 @@
-![LessRss Logo](https://sltptr.github.io/static/images/LessRssLogo.png)
+<img src="https://sltptr.github.io/static/images/LessRssLogo.png" alt="Less RSS Logo" style="max-width: 75%; height: auto;">
 
 <h3 align="center">Get fewer, better feed items.</h3>
-
-![LessRSS Screenshot w/ FreshRSS](https://sltptr.github.io/static/images/recorss.png)
 
 ### Motivation
 
