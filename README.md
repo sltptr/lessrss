@@ -1,15 +1,15 @@
 <div align="center">
-  <img src="https://sltptr.github.io/static/images/LessRssLogo.png" 
-    alt="Less RSS Logo" style="max-width: 60%; width: 600px; height: auto;">
+  <img src="https://sltptr.github.io/static/images/LSSLogo.png" 
+    alt="LSS Logo" style="max-width: 60%; width: 600px; height: auto;">
 </div>
 
-<h3 align="center">Get fewer, better feed items.</h3>
+<h3 align="center">(but still simple)</h3>
 
 ### Motivation
 
 RSS is a great tool for getting your internet updates, and having used it for
 the past year I wanted to see if there was a way to filter my feeds based on
-data collected with click tracking. LessRSS is that solution, it's a simple
+data collected with click tracking. LSS is that solution, it's a simple
 recommendation system that filters items through classifiers before publishing
 them to your feed.
 
