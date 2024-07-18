@@ -3,7 +3,7 @@
     alt="LSS Logo" style="max-width: 60%; width: 600px; height: auto;">
 </div>
 
-<h3 align="center">(but still simple)</h3>
+<p align="center">(but still simple)</p>
 
 ### Motivation
 
