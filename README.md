@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://sltptr.github.io/static/images/LSSLogo.png" 
+  <img src="https://sltptr.github.io/static/images/LSSLogo.png?" 
     alt="LSS Logo" style="max-width: 80%; width: 1200px; height: auto;">
 </div>
 
