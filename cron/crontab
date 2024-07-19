@@ -1,0 +1,3 @@
+0 * * * * cd / && /usr/local/bin/poetry run python -m lss.jobs.generate > /proc/1/fd/1 2> /proc/1/fd/2
+0 0 * * * cd / && /usr/local/bin/poetry run python -m lss.jobs.tfidf > /proc/1/fd/1 2> /proc/1/fd/2
+0 0 * * 0 cd / && /usr/bin/timeout 2m /usr/local/bin/poetry run python -m lss.jobs.distilbert > /proc/1/fd/1 2> /proc/1/fd/2

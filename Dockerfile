@@ -1,7 +1,5 @@
 FROM python:3.10-slim
 
-WORKDIR /src
-
 RUN apt-get update && apt-get install -y cron curl zip unzip sqlite3 && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
@@ -9,22 +7,19 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
     ./aws/install && \
     rm -rf aws awscliv2.zip
 
-COPY src/requirements.txt .
-RUN python -m venv .venv && \
-    . .venv/bin/activate && \
-    pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install pip poetry setuptools wheel -U --no-cache-dir
+COPY pyproject.toml poetry.lock .
+RUN poetry install --no-cache
 
-COPY src/crontab /etc/cron.d/app-crontab
+COPY cron/crontab /etc/cron.d/app-crontab
 RUN chmod 0644 /etc/cron.d/app-crontab && crontab /etc/cron.d/app-crontab && \
 mkdir -p /var/log/cron/generate /var/log/cron/tfidf /var/log/cron/distilbert
 
-COPY src/entrypoint.sh /entrypoint.sh
+COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-COPY src .
-RUN chmod +x /src/loadenv.sh
-
+COPY lss /lss
+RUN poetry install --no-cache
 
 EXPOSE 5000
 
