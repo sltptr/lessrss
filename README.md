@@ -9,11 +9,11 @@
 
 RSS is great, but there's always opportunities for improvement. Having used a feed
 reader for the better part of a year, I wanted to see if RSS is could be augmented with
-a simple recommender system so I could filter out new entries I'd rather not read.
+a simple recommender system that highlights the more interesting content.
 
 LSS is that solution, through click-tracking it learns to predict if
-you would or would not read new entries by their titles. Effectively, LSS is a simple
-content-based filter for your RSS feeds.
+you would or would not read new entries by their titles. Effectively, this means LSS is a simple
+content-based filter you can wrap around your feeds.
 
 ### Features
 
