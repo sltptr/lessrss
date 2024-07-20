@@ -1,10 +1,10 @@
 import yaml
 
-from lib.classifier import Classifier
-from lib.config import Config
-from lib.constant import Constant
-from lib.distilbert import DistilBERT
-from lib.tfidf import TFIDFLogistic
+from .classifier import Classifier
+from .config import Config
+from .constant import Constant
+from .distilbert import DistilBERT
+from .tfidf import TFIDFLogistic
 
 
 def load_config() -> Config:

@@ -4,14 +4,15 @@ import xml.etree.ElementTree as ET
 import feedparser
 import pandas as pd
 from feedparser import FeedParserDict
+from loguru import logger
 from pandas import DataFrame
 from sqlalchemy import Engine, create_engine, exists
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.models import Item, Label
-from lib.classifier import Classifier
-from lib.config import Config, FeedConfig
-from lib.utils import load_config, load_models
+from ...lib.classifier import Classifier
+from ...lib.config import Config, FeedConfig
+from ...lib.utils import load_config, load_models
+from ...models import Item, Label
 
 CHANNEL_PAIRS = [
     ("title", "No title"),
@@ -122,14 +123,14 @@ def main() -> None:
         )
         channel, entries = feed["channel"], feed["entries"]
         if not entries:
-            print(f"No entries for {feed_config.url}")
+            logger.info(f"No entries for {feed_config.url}")
             continue
         df = map_entries_dataframe(entries)
         try:
             with Session() as session:
                 df = filter_seen_entries(df, session)
                 if len(df) == 0:
-                    print(f"No new entries for {feed_config.url}")
+                    logger.info(f"No new entries for {feed_config.url}")
                     continue
                 df["votes"] = 0
                 for model in models:
@@ -140,13 +141,13 @@ def main() -> None:
                 )
                 items = create_items(df, feed_config, session)
                 if not items:
-                    print(f"Missing items for feed: {feed_config.directory}")
+                    logger.warning(f"Missing items for feed: {feed_config.directory}")
                     continue
                 dir_path = os.path.join("/data/files", feed_config.directory)
                 os.makedirs(name=dir_path, exist_ok=True)
                 create_feed(channel, items, config.host, dir_path)
         except Exception as e:
-            print(e)
+            logger.error(e)
 
 
 if __name__ == "__main__":

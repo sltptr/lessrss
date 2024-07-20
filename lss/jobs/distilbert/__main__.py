@@ -28,8 +28,8 @@ print(f"sagemaker role arn: {role}")
 print(f"sagemaker bucket: {sess.default_bucket()}")
 print(f"sagemaker session region: {sess.boto_region_name}")
 
-training_input_path = f"s3://{sagemaker_session_bucket}/less/train"
-test_input_path = f"s3://{sagemaker_session_bucket}/less/test"
+training_input_path = f"s3://{sagemaker_session_bucket}/lss/train"
+test_input_path = f"s3://{sagemaker_session_bucket}/lss/test"
 build_dataset_and_upload(training_input_path, test_input_path)
 
 hyperparameters = {
@@ -41,7 +41,7 @@ hyperparameters = {
 
 huggingface_estimator = HuggingFace(
     entry_point="train.py",
-    source_dir="/src/jobs/distilbert",
+    source_dir="/lss/jobs/distilbert",
     instance_type="ml.p3.2xlarge",
     instance_count=1,
     role=role,

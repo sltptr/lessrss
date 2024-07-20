@@ -2,6 +2,7 @@ import os
 
 import joblib
 import pandas as pd
+from loguru import logger
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
@@ -9,7 +10,7 @@ from sklearn.pipeline import Pipeline
 from sqlalchemy import Engine, create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from app.models import Item, Label
+from ...models import Item, Label
 
 engine: Engine = create_engine(url=os.environ["SQLALCHEMY_URL"])
 Session = sessionmaker(bind=engine)
@@ -24,6 +25,7 @@ try:
                 for item in items
             ]
         )
+        logger.debug(df)
     pipeline = Pipeline(
         [
             ("tfidf", TfidfVectorizer()),
@@ -38,6 +40,6 @@ try:
     os.makedirs(directory, exist_ok=True)
     file = os.path.join(directory, "tf-idf-logistic.joblib")
     joblib.dump(pipeline, file)
-    print("Fitted TFIDF pipeline")
+    logger.info("Fitted TFIDF pipeline")
 except Exception as e:
-    print(e)
+    logger.error(f"Exception occured: {e}")
