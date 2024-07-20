@@ -1,13 +1,12 @@
 import os
 
-from flask import Flask, redirect, send_from_directory
+from flask import redirect, send_from_directory
 from sqlalchemy import select
 
-from .database import Session
 from .models import Item, Label
 
 
-def register_routes(app: Flask):
+def register_routes(app, Session):
 
     # Quickly check database contents
     @app.route("/data", methods=["GET"])

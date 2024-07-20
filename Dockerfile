@@ -11,11 +11,11 @@ RUN pip install pip poetry setuptools wheel -U --no-cache-dir
 COPY pyproject.toml poetry.lock .
 RUN poetry install --no-cache
 
-COPY cron/crontab /etc/cron.d/app-crontab
-RUN chmod 0644 /etc/cron.d/app-crontab && crontab /etc/cron.d/app-crontab && \
+COPY config/crontab /etc/cron.d/crontab
+RUN chmod 0644 /etc/cron.d/crontab && crontab /etc/cron.d/crontab && \
 mkdir -p /var/log/cron/generate /var/log/cron/tfidf /var/log/cron/distilbert
 
-COPY scripts/entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 COPY lss /lss
