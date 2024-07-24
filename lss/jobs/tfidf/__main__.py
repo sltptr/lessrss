@@ -17,8 +17,8 @@ Session = sessionmaker(bind=engine)
 
 try:
     with Session() as session:
-        statement = select(Item).where(Item.label != None)
-        items = session.scalars(statement).all()
+        stmt = select(Item).where(Item.label != None)
+        items = session.execute(stmt).scalars()
         df = pd.DataFrame(
             [
                 {"title": item.title, "label": 1 if item.label is Label.POSITIVE else 0}

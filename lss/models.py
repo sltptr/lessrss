@@ -1,30 +1,47 @@
 import enum
+from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Enum, Integer, MetaData, String, Table, func
+from sqlalchemy import DateTime, MetaData, String, UniqueConstraint, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+constraint_naming_conventions = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
 
 
-class Click(enum.Enum):
+class Base(DeclarativeBase):
+    metadata = MetaData(naming_convention=constraint_naming_conventions)
+
+
+class Label(enum.Enum):
     NEGATIVE = 0
     POSITIVE = 1
 
 
-metadata_obj = MetaData()
-item = Table(
-    "item",
-    metadata_obj,
-    Column("item_id", Integer, primary_key=True),
-    Column("title", String),
-    Column("link", String),
-    Column("prediction", Enum(Click)),
-    Column("label", Enum(Click)),
-    Column("description", String),
-    Column("author", String),
-    Column("category", String),
-    Column("comments", String),
-    Column("enclosure", String),
-    Column("guid", String),
-    Column("pubDate", String),
-    Column("source", String),
-    Column("created_at", DateTime, default=func.now()),
-    Column("updated_at", DateTime, default=func.now()),
-)
+class Item(Base):
+    __tablename__ = "item"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=func.now(), onupdate=func.now(), nullable=False
+    )
+    title: Mapped[str] = mapped_column(String, index=True)
+    link: Mapped[str]
+    prediction: Mapped[Label]
+    label: Mapped[Label | None]
+    description: Mapped[str | None]
+    author: Mapped[str | None]
+    category: Mapped[str | None]
+    comments: Mapped[str | None]
+    enclosure: Mapped[str | None]
+    guid: Mapped[str | None]
+    pubDate: Mapped[str | None]
+    source: Mapped[str | None]
+
+    __table_args__ = (UniqueConstraint("title", "source"),)

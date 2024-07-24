@@ -1,15 +1,14 @@
 services:
   main:
     build: .
-    container_name: lss
+    container_name: lss-main
     ports:
       - 5000:5000
     volumes:
       - ~/.aws:/root/.aws
-      - ./config:/config
       - data:/data
     environment:
-      - SQLALCHEMY_URL=${SQLALCHEMY_URL}
+      - SQLALCHEMY_URL=sqlite:///data/lss.db
       - IAM_ROLE=${IAM_ROLE}
     develop:
       watch:

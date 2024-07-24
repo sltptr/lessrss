@@ -15,6 +15,13 @@ COPY config/crontab /etc/cron.d/crontab
 RUN chmod 0644 /etc/cron.d/crontab && crontab /etc/cron.d/crontab && \
 mkdir -p /var/log/cron/generate /var/log/cron/tfidf /var/log/cron/distilbert
 
+RUN mkdir -p /config
+COPY config /config
+
+RUN mkdir -p /alembic
+COPY alembic /alembic
+COPY alembic.ini /
+
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
