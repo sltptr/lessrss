@@ -25,6 +25,8 @@ COPY alembic.ini /
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
+RUN printenv >/env.txt
+
 COPY lss /lss
 RUN poetry install --no-cache
 
