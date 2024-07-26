@@ -6,12 +6,12 @@ import pandas as pd
 from feedparser import FeedParserDict
 from loguru import logger
 from pandas import DataFrame
-from sqlalchemy import Engine, create_engine, select
+from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from ...lib.config import FeedConfig
 from ...lib.utils import load_config, load_models
-from ...models import Item, Label
+from ...models import Item, Label, get_item_by_title
 
 CHANNEL_PAIRS = [
     ("title", "No title"),
@@ -50,19 +50,11 @@ def construct_dataframe(entries: feedparser.FeedParserDict) -> pd.DataFrame:
     return pd.DataFrame(mapped_entries)
 
 
-def remove_duplicates(df: pd.DataFrame, session: Session) -> pd.DataFrame:
-    def title_exists(title):
-        return session.execute(select(Item).where(Item.title == title)).first()
-
-    df = df.drop_duplicates(subset=["title"])
-    new_titles = [title for title in df["title"] if not title_exists(title)]
-    return df[df["title"].isin(new_titles)].copy()
-
-
 def create_items(
     df: DataFrame, feed_config: FeedConfig, session: Session
 ) -> list[Item] | None:
     items = []
+    logger.info("Writing to {}\n{}", feed_config.url, df)
     for _, row in df.iterrows():
         try:
             item = Item(
@@ -81,10 +73,11 @@ def create_items(
             )
             if item.prediction is Label.POSITIVE or feed_config.show_all:
                 items.append(item)
+            logger.info("{}, {}", item.source, item.title)
             session.add(item)
         except Exception as e:
-            logger.error(f"Error while adding item {row.get('title')}: {e}")
-    session.commit()
+            logger.exception(f"Error while adding item {row.get('title')}: {e}")
+        session.commit()
     return items
 
 
@@ -123,18 +116,38 @@ def create_feed(
 config = load_config()
 models = load_models(config)
 for feed_config in config.feeds:
-    quorom = feed_config.quorom or config.quorom
-    feed: FeedParserDict = feedparser.parse(url_file_stream_or_string=feed_config.url)
-    channel, entries = feed.channel, feed.entries
-    if not entries:
-        logger.info(f"No entries for {feed_config.url}")
-        continue
-    raw_df = construct_dataframe(entries)
     try:
+        quorom = feed_config.quorom or config.quorom
+        feed: FeedParserDict = feedparser.parse(
+            url_file_stream_or_string=feed_config.url
+        )
+        channel, entries = feed.channel, feed.entries
+        if not entries:
+            logger.info("No entries for {}", feed_config.url)
+            continue
         with SessionFactory() as session:
-            df = remove_duplicates(raw_df, session)
+            df = construct_dataframe(entries)
+            logger.info(
+                "{} shape after `construct_dataframe`: {}", feed_config.url, df.shape
+            )
+            df = df.drop_duplicates(
+                subset=["title"]
+            )  # Have seen some feeds accidentally double post
+            logger.info(
+                "{} shape after `drop_duplicates`: {}", feed_config.url, df.shape
+            )
             if df.empty:
-                logger.info(f"No new entries for {feed_config.url}")
+                continue
+            mask = df.apply(
+                lambda row: get_item_by_title(session, row["title"]) is None, axis=1
+            )
+            df = df[mask]
+            logger.info(
+                "{} shape after `get_item_by_title` mask was applied: {}",
+                feed_config.url,
+                df.shape,
+            )
+            if df.empty:
                 continue
             df["votes"] = 0
             for model in models:
@@ -143,9 +156,9 @@ for feed_config in config.feeds:
             df["prediction"] = df["votes"].apply(
                 lambda x: Label.POSITIVE if x >= quorom else Label.NEGATIVE
             )
-            items = create_items(df, feed_config, session)
             dir_path = os.path.join("/data/files", feed_config.directory)
             os.makedirs(name=dir_path, exist_ok=True)
+            items = create_items(df, feed_config, session)
             create_feed(channel, items, config.host, dir_path)
     except Exception as e:
-        logger.error(f"Error while handling {feed_config.url}: {e}")
+        logger.exception("Error while handling {}: {}", feed_config.url, e)

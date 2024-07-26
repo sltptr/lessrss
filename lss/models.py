@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import DateTime, MetaData, String, UniqueConstraint, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 constraint_naming_conventions = {
     "ix": "ix_%(column_0_label)s",
@@ -45,3 +45,7 @@ class Item(Base):
     source: Mapped[str | None]
 
     __table_args__ = (UniqueConstraint("title", "source"),)
+
+
+def get_item_by_title(session: Session, title: str) -> Item | None:
+    return session.query(Item).filter_by(title=title).one_or_none()
