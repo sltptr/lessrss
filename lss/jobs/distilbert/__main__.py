@@ -1,10 +1,13 @@
 import os
+import sys
 import tarfile
 
 import boto3
 import sagemaker
 from sagemaker.huggingface import HuggingFace
 from sagemaker.s3 import S3Downloader
+
+a = sys.argv
 
 from .dataset import build_dataset_and_upload
 

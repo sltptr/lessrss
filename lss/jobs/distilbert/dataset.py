@@ -23,7 +23,7 @@ def build_dataset_and_upload(training_input_path: str, test_input_path: str):
     counts = Counter(df["label"])
     n_samples = max(counts.values())
     minority_label = POS if counts[POS] < counts[NEG] else NEG
-    majority_label = int(not minority_label)
+    majority_label = NEG if minority_label == POS else POS
     minority_upsampled_df = resample(
         df[df.label == minority_label], replace=True, n_samples=n_samples
     )

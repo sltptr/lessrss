@@ -47,5 +47,7 @@ class Item(Base):
     __table_args__ = (UniqueConstraint("title", "source"),)
 
 
-def get_item_by_title(session: Session, title: str) -> Item | None:
-    return session.query(Item).filter_by(title=title).one_or_none()
+def get_item_by_title_and_source(
+    session: Session, title: str, source: str
+) -> Item | None:
+    return session.query(Item).filter_by(title=title, source=source).one_or_none()

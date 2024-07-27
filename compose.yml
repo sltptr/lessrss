@@ -4,6 +4,7 @@ services:
     container_name: lss-main
     ports:
       - 5000:5000
+      - 5678:5678 # for debugpy
     volumes:
       - ~/.aws:/root/.aws
       - data:/data

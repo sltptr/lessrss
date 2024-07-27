@@ -1,4 +1,5 @@
 import yaml
+from loguru import logger
 
 from .classifier import Classifier
 from .config import Config
@@ -25,7 +26,7 @@ def load_models(config: Config) -> list[Classifier]:
         try:
             models.append(classifier_class(classifier_config))
         except Exception as e:
-            print(e)
+            logger.exception("Error while loading model: {}", e)
             models.append(Constant(classifier_config, True))
-    print(f"Loaded models: {models}")
+    logger.info("Loaded models: {}", models)
     return models

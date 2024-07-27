@@ -1,5 +1,6 @@
 import torch
 import torch.nn.functional as F
+from loguru import logger
 from transformers import DistilBertForSequenceClassification, DistilBertTokenizer
 
 from .classifier import Classifier
@@ -34,4 +35,4 @@ class DistilBERT(Classifier):
                 output = self.model(**encodings)
             return torch.argmax(F.softmax(output.logits, dim=1)).item()
 
-        return df["title"].map(infer).to_numpy()
+        return df.apply(lambda row: infer(row["title"]), axis=1).to_numpy()

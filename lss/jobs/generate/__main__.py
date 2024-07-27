@@ -9,9 +9,11 @@ from pandas import DataFrame
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from lss.lib.classifier import Classifier
+
 from ...lib.config import FeedConfig
 from ...lib.utils import load_config, load_models
-from ...models import Item, Label, get_item_by_title
+from ...models import Item, Label, get_item_by_title_and_source
 
 CHANNEL_PAIRS = [
     ("title", "No title"),
@@ -41,13 +43,43 @@ This means pandas cannot infer all the necessary columns, hence why this method 
 """
 
 
-def construct_dataframe(entries: feedparser.FeedParserDict) -> pd.DataFrame:
+def construct_dataframe(
+    channel_title: str, entries: feedparser.FeedParserDict, session: Session
+) -> pd.DataFrame:
     mapped_entries = []
     for entry in entries:
         mapped_entries.append(
             {key: entry.get(key, default) for key, default in ITEM_PAIRS}
         )
-    return pd.DataFrame(mapped_entries)
+    df = pd.DataFrame(mapped_entries)
+    logger.info("{} shape after `construct_dataframe`: {}", channel_title, df.shape)
+    df = df.drop_duplicates(
+        subset=["title"]
+    )  # Have seen some feeds accidentally double post
+    logger.info("{} shape after `drop_duplicates`: {}", channel_title, df.shape)
+    mask = df.apply(
+        lambda row: get_item_by_title_and_source(session, row["title"], row["source"])
+        is None,
+        axis=1,
+    )
+    df = df[mask]
+    logger.info(
+        "{} shape after `get_item_by_title_and_source` mask was applied: {}",
+        channel_title,
+        df.shape,
+    )
+    return df
+
+
+def add_predictions(df: DataFrame, models: list[Classifier], quorom: int):
+    df["votes"] = 0
+    for model in models:
+        name = model.__class__.__name__
+        df[f"prediction_{name}"] = model.run(df)
+        df["votes"] += df[f"prediction_{name}"] * model.weight
+    df["prediction"] = df["votes"].apply(
+        lambda count: Label.POSITIVE if count >= quorom else Label.NEGATIVE
+    )
 
 
 def create_items(
@@ -77,7 +109,6 @@ def create_items(
             session.add(item)
         except Exception as e:
             logger.exception(f"Error while adding item {row.get('title')}: {e}")
-        session.commit()
     return items
 
 
@@ -113,52 +144,36 @@ def create_feed(
         tree.write(xml_file, encoding="utf-8", xml_declaration=True)
 
 
+logger.info("Starting generation job...")
 config = load_config()
 models = load_models(config)
 for feed_config in config.feeds:
     try:
-        quorom = feed_config.quorom or config.quorom
         feed: FeedParserDict = feedparser.parse(
             url_file_stream_or_string=feed_config.url
         )
         channel, entries = feed.channel, feed.entries
-        if not entries:
-            logger.info("No entries for {}", feed_config.url)
-            continue
-        with SessionFactory() as session:
-            df = construct_dataframe(entries)
-            logger.info(
-                "{} shape after `construct_dataframe`: {}", feed_config.url, df.shape
-            )
-            df = df.drop_duplicates(
-                subset=["title"]
-            )  # Have seen some feeds accidentally double post
-            logger.info(
-                "{} shape after `drop_duplicates`: {}", feed_config.url, df.shape
-            )
+        logger.info("Successfully parsed {}", channel.title)
+    except Exception as e:
+        logger.exception("Error while parsing {}: {}", feed_config.url, e)
+        continue
+    if not entries:
+        logger.info("No entries for {}", channel.title)
+        continue
+    with SessionFactory() as session:
+        try:
+            df = construct_dataframe(channel.title, entries, session)
             if df.empty:
+                logger.info("No new entries for {}", channel.title)
                 continue
-            mask = df.apply(
-                lambda row: get_item_by_title(session, row["title"]) is None, axis=1
-            )
-            df = df[mask]
-            logger.info(
-                "{} shape after `get_item_by_title` mask was applied: {}",
-                feed_config.url,
-                df.shape,
-            )
-            if df.empty:
-                continue
-            df["votes"] = 0
-            for model in models:
-                preds = model.run(df)
-                df["votes"] += preds * model.weight
-            df["prediction"] = df["votes"].apply(
-                lambda x: Label.POSITIVE if x >= quorom else Label.NEGATIVE
-            )
+            quorom = feed_config.quorom or config.quorom
+            add_predictions(df, models, quorom)
             dir_path = os.path.join("/data/files", feed_config.directory)
             os.makedirs(name=dir_path, exist_ok=True)
             items = create_items(df, feed_config, session)
             create_feed(channel, items, config.host, dir_path)
-    except Exception as e:
-        logger.exception("Error while handling {}: {}", feed_config.url, e)
+            session.commit()
+        except Exception as e:
+            logger.exception("Error while generating {}: {}", channel.title, e)
+            session.rollback()
+logger.info("Generation job completed")
