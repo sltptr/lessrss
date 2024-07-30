@@ -1,4 +1,5 @@
-FROM python:3.10-slim
+# FROM python:3.10-slim
+FROM python:3.12-slim
 
 RUN apt-get update && apt-get install -y cron curl zip unzip sqlite3 && apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -11,23 +12,12 @@ RUN pip install pip poetry setuptools wheel -U --no-cache-dir
 COPY pyproject.toml poetry.lock .
 RUN poetry install --no-cache
 
-COPY config/crontab /etc/cron.d/crontab
-RUN chmod 0644 /etc/cron.d/crontab && crontab /etc/cron.d/crontab && \
-mkdir -p /var/log/cron/generate /var/log/cron/tfidf /var/log/cron/distilbert
-
-RUN mkdir -p /config
-COPY config /config
-
-RUN mkdir -p /alembic
-COPY alembic /alembic
-COPY alembic.ini /
+RUN crontab /asdf/crontab
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-RUN printenv >/env.txt
-
-COPY lss /lss
+COPY app /app
 RUN poetry install --no-cache
 
 EXPOSE 5000

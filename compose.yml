@@ -1,12 +1,14 @@
 services:
-  main:
-    build: .
-    container_name: lss-main
+  app:
+    build: ./app
+    container_name: app
     ports:
       - 5000:5000
-      - 5678:5678 # for debugpy
+      # uncomment if debugging w/ debugpy
+      # - 5678:5678
     volumes:
       - ~/.aws:/root/.aws
+      - ./config:/asdf
       - data:/data
     environment:
       - SQLALCHEMY_URL=sqlite:///data/lss.db
@@ -14,8 +16,8 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./lss
-          target: /lss
+          path: ./app
+          target: /app
     restart: always
 volumes:
   data:

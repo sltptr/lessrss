@@ -27,6 +27,9 @@ psycopg2-binary = "^2.9.9"
 alembic = "^1.13.2"
 debugpy = "^1.8.2"
 
+[tool.poetry.scripts]
+app = "app.entrypoint:cmd"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
