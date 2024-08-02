@@ -3,14 +3,14 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pandas as pd
 
-from .config import ClassifierConfig
+from .types import ClassifierConfig
 
 
 class Classifier(ABC):
 
-    def __init__(self, data: ClassifierConfig):
-        self.weight = data.weight
-        self.classifier_active = data.classifier_active
+    def __init__(self, config: ClassifierConfig):
+        self.weight = config.weight
+        self.active = config.active
 
     @abstractmethod
     def run(self, df: pd.DataFrame) -> np.array:

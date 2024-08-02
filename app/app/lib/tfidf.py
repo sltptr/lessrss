@@ -2,13 +2,13 @@ import joblib
 from sklearn.pipeline import Pipeline
 
 from .classifier import Classifier
-from .config import ClassifierConfig
+from .types import ClassifierConfig
 
 
 class TFIDFLogistic(Classifier):
 
-    def __init__(self, data: ClassifierConfig) -> None:
-        super().__init__(data)
+    def __init__(self, config: ClassifierConfig) -> None:
+        super().__init__(config)
         self.model: Pipeline = joblib.load("/data/models/tf-idf-logistic.joblib")
 
     def run(self, df):

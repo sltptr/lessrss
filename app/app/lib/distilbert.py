@@ -1,16 +1,15 @@
 import torch
 import torch.nn.functional as F
-from loguru import logger
 from transformers import DistilBertForSequenceClassification, DistilBertTokenizer
 
 from .classifier import Classifier
-from .config import ClassifierConfig
+from .types import ClassifierConfig
 
 
 class DistilBERT(Classifier):
 
-    def __init__(self, data: ClassifierConfig) -> None:
-        super().__init__(data)
+    def __init__(self, config: ClassifierConfig) -> None:
+        super().__init__(config)
         self.model = DistilBertForSequenceClassification.from_pretrained(
             "/data/models/distilbert"
         )

@@ -1,14 +1,14 @@
 import enum
 from datetime import datetime
+from typing import Sequence
 
-from sqlalchemy import DateTime, MetaData, String, UniqueConstraint, func
+import arrow
+from sqlalchemy import DateTime, Index, MetaData, UniqueConstraint, func, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 constraint_naming_conventions = {
-    "ix": "ix_%(column_0_label)s",
-    "uq": "uq_%(table_name)s_%(column_0_name)s",
-    "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "ix": "ix_%(table_name)s_%(column_0_N_name)s",
+    "uq": "uq_%(table_name)s_%(column_0_N_name)s",
     "pk": "pk_%(table_name)s",
 }
 
@@ -31,10 +31,11 @@ class Item(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now(), nullable=False
     )
-    title: Mapped[str] = mapped_column(String, index=True)
-    link: Mapped[str]
+    feedUrl: Mapped[str]
     prediction: Mapped[Label]
     label: Mapped[Label | None]
+    title: Mapped[str]
+    link: Mapped[str]
     description: Mapped[str | None]
     author: Mapped[str | None]
     category: Mapped[str | None]
@@ -42,12 +43,29 @@ class Item(Base):
     enclosure: Mapped[str | None]
     guid: Mapped[str | None]
     pubDate: Mapped[str | None]
-    source: Mapped[str | None]
 
-    __table_args__ = (UniqueConstraint("title", "source"),)
+    __table_args__ = (
+        UniqueConstraint("title", "feedUrl"),
+        Index(None, "feedUrl", "title"),
+        Index(None, "feedUrl", "created_at", "prediction"),
+    )
 
 
-def get_item_by_title_and_source(
-    session: Session, title: str, source: str
+def get_item_by_feedUrl_and_title(
+    session: Session, title: str, feedUrl: str
 ) -> Item | None:
-    return session.query(Item).filter_by(title=title, source=source).one_or_none()
+    stmt = select(Item).where(Item.title == title, Item.feedUrl == feedUrl)
+    return session.scalars(stmt).one_or_none()
+
+
+def get_past_two_weeks_items_by_feedUrl(
+    session: Session, feedUrl: str, prediction: Label | None = None
+) -> Sequence[Item]:
+    conditions = [
+        Item.feedUrl == feedUrl,
+        Item.created_at >= arrow.utcnow().shift(weeks=-2).datetime,
+    ]
+    if prediction is not None:
+        conditions.append(Item.prediction == prediction)
+    stmt = select(Item).where(*conditions).order_by(Item.created_at)
+    return session.scalars(stmt).all()

@@ -1,11 +1,14 @@
+import base64
+import hashlib
+
 import yaml
 from loguru import logger
 
 from .classifier import Classifier
-from .config import Config
 from .constant import Constant
 from .distilbert import DistilBERT
 from .tfidf import TFIDFLogistic
+from .types import Config
 
 
 def load_config() -> Config:
@@ -16,17 +19,25 @@ def load_config() -> Config:
 
 def load_models(config: Config) -> list[Classifier]:
     models: list[Classifier] = []
-    classifier_definitions = [
+    init = [
         (TFIDFLogistic, config.classifiers["tfidf"]),
         (DistilBERT, config.classifiers["distilbert"]),
     ]
-    for classifier_class, classifier_config in classifier_definitions:
-        if not classifier_config.classifier_active:
+    for cls, cfg in init:
+        if not cfg.active:
             continue
         try:
-            models.append(classifier_class(classifier_config))
+            models.append(cls(cfg))
         except Exception as e:
             logger.exception("Error while loading model: {}", e)
-            models.append(Constant(classifier_config, True))
+            models.append(Constant(cfg, True))
     logger.info("Loaded models: {}", models)
     return models
+
+
+def hash_url(url: str, max_len=8):
+    sha256 = hashlib.sha256()
+    sha256.update(url.encode("utf-8"))
+    base64_hashed = base64.urlsafe_b64encode(sha256.digest()).decode("utf-8")
+    truncated_hashed_string = base64_hashed[:max_len]
+    return truncated_hashed_string

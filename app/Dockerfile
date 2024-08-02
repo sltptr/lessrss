@@ -9,16 +9,14 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
     rm -rf aws awscliv2.zip
 
 RUN pip install pip poetry setuptools wheel -U --no-cache-dir
-COPY pyproject.toml poetry.lock .
-RUN poetry install --no-cache
-
-RUN crontab /asdf/crontab
+COPY alembic.ini pyproject.toml poetry.lock .
+RUN poetry install --without=dev --no-cache
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 COPY app /app
-RUN poetry install --no-cache
+RUN poetry install --without=dev --no-cache
 
 EXPOSE 5000
 

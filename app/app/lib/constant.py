@@ -1,13 +1,13 @@
 import numpy as np
 
 from .classifier import Classifier
-from .config import ClassifierConfig
+from .types import ClassifierConfig
 
 
 class Constant(Classifier):
 
-    def __init__(self, data: ClassifierConfig, isPositive: bool) -> None:
-        super().__init__(data)
+    def __init__(self, config: ClassifierConfig, isPositive: bool) -> None:
+        super().__init__(config)
         self.constant = 1 if isPositive else 0
 
     def run(self, df):

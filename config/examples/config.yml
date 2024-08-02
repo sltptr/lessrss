@@ -1,18 +1,19 @@
 ---
-host: https://www.yoursite.com
+cold_start: true
+host: https://example.com
 quorom: 1
 feeds:
   - url: https://feeds.bloomberg.com/markets/news.rss
-    directory: bloomberg/markets
+  - url: https://feeds.bloomberg.com/politics/news.rss
+  - url: https://feeds.bloomberg.com/technology/news.rss
   - url: https://news.ycombinator.com/rss
-    directory: hacker_news
+    filter: false
   - url: https://techcrunch.com/feed
-    directory: techcrunch
     quorom: 3
 classifiers:
   tfidf:
     weight: 1
-    classifier_active: true
+    active: true
   distilbert:
     weight: 2
-    classifier_active: false
+    active: false
