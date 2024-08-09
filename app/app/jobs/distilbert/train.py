@@ -58,13 +58,15 @@ if __name__ == "__main__":
         labels = pred.label_ids
         preds = pred.predictions.argmax(-1)
         precision, recall, f1, _ = precision_recall_fscore_support(
-            labels, preds, average="binary"
+            labels, preds, average="macro"
         )
         acc = accuracy_score(labels, preds)
         return {"accuracy": acc, "f1": f1, "precision": precision, "recall": recall}
 
     # download model from model hub
-    model = AutoModelForSequenceClassification.from_pretrained(args.model_name_or_path)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        args.model_name_or_path, num_labels=3
+    )
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
 
     # define training args

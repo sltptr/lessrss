@@ -1,5 +1,8 @@
+import numpy as np
+import pandas as pd
 import torch
 import torch.nn.functional as F
+from loguru import logger
 from transformers import DistilBertForSequenceClassification, DistilBertTokenizer
 
 from .classifier import Classifier
@@ -26,12 +29,21 @@ class DistilBERT(Classifier):
 
     def run(self, df):
 
-        def infer(title):
+        def infer(title: str):
             encodings = self.tokenizer(
                 title, return_tensors="pt", padding=True, truncation=True
             )
             with torch.no_grad():
                 output = self.model(**encodings)
-            return torch.argmax(F.softmax(output.logits, dim=1)).item()
+            smax = (
+                F.softmax(output.logits, dim=1).double().numpy()[0]
+            )  # Need [0] because it's a batched output even for single item inference
+            return smax
 
-        return df.apply(lambda row: infer(row["title"]), axis=1).to_numpy()
+        proba_series = df["title"].apply(lambda title: infer(title))
+        proba_df = pd.DataFrame(
+            proba_series.tolist(),
+            columns=["proba_poor", "proba_average", "proba_good"],
+        )
+        logger.debug(proba_df)
+        return pd.concat([df, proba_df], axis=1)

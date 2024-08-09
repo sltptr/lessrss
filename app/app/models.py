@@ -1,5 +1,5 @@
-import enum
 from datetime import datetime
+from enum import Enum
 from typing import Sequence
 
 import arrow
@@ -17,9 +17,10 @@ class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=constraint_naming_conventions)
 
 
-class Label(enum.Enum):
-    NEGATIVE = 0
-    POSITIVE = 1
+class Label(Enum):
+    POOR = 0  # Not even interested in the title
+    AVERAGE = 1  # Mild interest in the title
+    GOOD = 2  # Interested enough to follow the link
 
 
 class Item(Base):
@@ -31,11 +32,11 @@ class Item(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=func.now(), onupdate=func.now(), nullable=False
     )
-    feedUrl: Mapped[str]
-    prediction: Mapped[Label]
-    label: Mapped[Label | None]
+    feed_url: Mapped[str]
     title: Mapped[str]
     link: Mapped[str]
+    predicted_label: Mapped[Label | None]
+    label: Mapped[Label | None]
     description: Mapped[str | None]
     author: Mapped[str | None]
     category: Mapped[str | None]
@@ -45,27 +46,27 @@ class Item(Base):
     pubDate: Mapped[str | None]
 
     __table_args__ = (
-        UniqueConstraint("title", "feedUrl"),
-        Index(None, "feedUrl", "title"),
-        Index(None, "feedUrl", "created_at", "prediction"),
+        UniqueConstraint("title", "feed_url"),
+        Index(None, "feed_url", "title"),
+        Index(None, "feed_url", "created_at", "predicted_label"),
     )
 
 
-def get_item_by_feedUrl_and_title(
-    session: Session, title: str, feedUrl: str
+def get_item_by_feed_url_and_title(
+    session: Session, feed_url: str, title: str
 ) -> Item | None:
-    stmt = select(Item).where(Item.title == title, Item.feedUrl == feedUrl)
+    stmt = select(Item).where(Item.title == title, Item.feed_url == feed_url)
     return session.scalars(stmt).one_or_none()
 
 
-def get_past_two_weeks_items_by_feedUrl(
-    session: Session, feedUrl: str, prediction: Label | None = None
+def get_past_two_weeks_items_by_feed_url(
+    session: Session, feed_url: str, predicted_labels: list[Label] = []
 ) -> Sequence[Item]:
     conditions = [
-        Item.feedUrl == feedUrl,
+        Item.feed_url == feed_url,
         Item.created_at >= arrow.utcnow().shift(weeks=-2).datetime,
     ]
-    if prediction is not None:
-        conditions.append(Item.prediction == prediction)
+    if predicted_labels:
+        conditions.append(Item.predicted_label.in_(predicted_labels))
     stmt = select(Item).where(*conditions).order_by(Item.created_at)
     return session.scalars(stmt).all()

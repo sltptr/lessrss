@@ -1,67 +1,41 @@
 import os
-import xml.etree.ElementTree as ET
 from pathlib import Path
+from typing import Any
 
-import feedparser
+import httpx
 import pandas as pd
-from feedparser import FeedParserDict
+import xmltodict
 from loguru import logger
 from pandas import DataFrame
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from ..lib.classifier import Classifier
-from ..lib.types import Config, FeedConfig
+from ..lib.types import Config, FeedConfig, ParsedChannel, ParsedItem
 from ..lib.utils import hash_url, load_config, load_models
 from ..models import (
     Item,
     Label,
-    get_item_by_feedUrl_and_title,
-    get_past_two_weeks_items_by_feedUrl,
+    get_item_by_feed_url_and_title,
+    get_past_two_weeks_items_by_feed_url,
 )
-
-CHANNEL_PAIRS = [
-    ("title", "No title"),
-    ("link", ""),
-    ("description", ""),
-]
-
-ITEM_PAIRS = [
-    ("title", "No title"),
-    ("link", ""),
-    ("description", ""),
-    ("author", ""),
-    ("comments", ""),
-    ("enclosure", ""),
-    ("guid", ""),
-    ("pubDate", ""),
-    ("source", ""),
-]
 
 engine: Engine = create_engine(url=os.environ["SQLALCHEMY_URL"])
 SessionFactory = sessionmaker(bind=engine)
 
 
-"""
-FeedParserDict uses special logic to handle mapping keys from Atom->RSS. 
-This means pandas cannot infer all the necessary columns, hence why this method exists.
-"""
-
-
 def construct_dataframe(
-    entries: FeedParserDict, feed_config: FeedConfig, session: Session
+    feed_config: FeedConfig, items: list[ParsedItem], session: Session
 ) -> pd.DataFrame:
-    mapped_entries = [
-        {key: entry.get(key, default) for key, default in ITEM_PAIRS}
-        for entry in entries
-    ]
-    df = pd.DataFrame(mapped_entries)
+    df = pd.DataFrame([dict(item) for item in items])
     df = df.drop_duplicates(
         subset=["title"]
     )  # Have seen some feeds accidentally double post
+    if df.empty:
+        return df
     mask = df.apply(
-        lambda row: get_item_by_feedUrl_and_title(
-            session, feed_config.url, row["title"]
+        lambda row: get_item_by_feed_url_and_title(
+            session, feed_config.url, row.get("title", "")
         )
         is None,
         axis=1,
@@ -69,20 +43,19 @@ def construct_dataframe(
     return df[mask]
 
 
-def add_predictions(df: DataFrame, models: list[Classifier], quorom: int) -> DataFrame:
-    df["votes"] = 0
+def add_predictions(
+    df: DataFrame,
+    models: list[Classifier],
+) -> DataFrame:
+    scores = pd.DataFrame(
+        [[0, 0, 0] * df.shape[0]], columns=["poor", "average", "good"]
+    )
     for model in models:
-        name = model.__class__.__name__
-        df[f"prediction_{name}"] = model.run(df)
-        df["votes"] += df[f"prediction_{name}"] * model.weight
-    df["prediction"] = df["votes"].apply(
-        lambda count: Label.POSITIVE if count >= quorom else Label.NEGATIVE
-    )
-    logger.info(
-        "# POSITIVE = {} / # NEGATIVE = {}",
-        len(df["votes"] >= quorom),
-        len(df["votes"] < quorom),
-    )
+        model_df = model.run(df)
+        for label in ("poor", "average", "good"):
+            scores[label] += model_df[f"proba_{label}"] * model.weight
+    scores["final"] = scores.idxmax(axis=1)
+    df["predicted_label"] = scores["final"].apply(lambda label: Label[label.upper()])
     return df
 
 
@@ -90,11 +63,11 @@ def commit_items(df: DataFrame, feed_config: FeedConfig, session: Session) -> No
     for _, row in df.iterrows():
         try:
             item = Item(
-                feedUrl=feed_config.url,
-                prediction=row["prediction"],
+                feed_url=feed_config.url,
+                title=row["title"],
+                link=row["link"],
+                predicted_label=row.get("predicted_label"),
                 label=None,
-                title=row.get("title"),
-                link=row.get("link"),
                 description=row.get("description"),
                 author=row.get("author"),
                 category=row.get("category"),
@@ -110,73 +83,89 @@ def commit_items(df: DataFrame, feed_config: FeedConfig, session: Session) -> No
             session.rollback()
 
 
-def write_feed(feed, config: Config, feed_config: FeedConfig, session: Session):
+def update_feed(
+    config: Config, feed_config: FeedConfig, channel: ParsedChannel, session: Session
+):
 
     filter = feed_config.filter
     if filter is None:
         filter = not config.cold_start
 
-    rss = ET.Element("rss")
-    rss.set("version", "2.0")
+    xml_dict: dict[str, Any] = {"rss": {"@version": "2.0"}}
+    xml_dict["rss"]["channel"] = dict(channel)
+    xml_dict["rss"]["channel"]["item"] = []
+    xml_items = xml_dict["rss"]["channel"]["item"]
 
-    channel = ET.SubElement(rss, "channel")
-
-    for key, default in CHANNEL_PAIRS:
-        element = ET.SubElement(channel, key)
-        element.text = feed.channel.get(key, default)
-
-    items = get_past_two_weeks_items_by_feedUrl(
-        session, feed_config.url, Label.POSITIVE if filter else None
+    items = get_past_two_weeks_items_by_feed_url(
+        session, feed_config.url, [Label.AVERAGE, Label.GOOD] if filter else []
     )
-    for item in items:
-        item_element = ET.SubElement(channel, "item")
-        for key, default in ITEM_PAIRS:
-            element = ET.SubElement(item_element, key)
-            if key == "title":
-                element.text = f"{'&#11088;' if item.prediction is Label.POSITIVE else ' '} {item.title}"
-            elif key == "link":
-                element.text = f"{config.host}/update/{item.id}/1"
-            elif key == "description":
-                element.text = f"<a href='{config.host}/update/{item.id}/0'>Click To Dislike</a><br><br>{item.description}"
-            else:
-                element.text = getattr(item, key, default)
 
-    tree = ET.ElementTree(rss)
+    for item in items:
+        parsed_item = ParsedItem(**item.__dict__)
+        parsed_item.link = f"{config.host}/update/{item.id}/2"
+        dismiss = (
+            f"<a href='{config.host}/update/{item.id}/1'>&#128309; Click To Skim</a>"
+        )
+        dislike = (
+            f"<a href='{config.host}/update/{item.id}/0'>&#128308; Click To Dislike</a>"
+        )
+        parsed_item.description = (
+            f"<p>{dismiss} | {dislike}</p><br><br>{item.description}"
+        )
+        if item.predicted_label is Label.GOOD:
+            parsed_item.title = f"&#11088; {parsed_item.title}"
+        elif item.predicted_label is Label.AVERAGE:
+            parsed_item.title = f"&#11088; {parsed_item.title}"
+        elif item.predicted_label is Label.POOR:
+            parsed_item.title = f"&#11088; {parsed_item.title}"
+        xml_items.append(dict(parsed_item))
 
     path = Path("/data/feeds") / hash_url(feed_config.url)
     path.mkdir(parents=True, exist_ok=True)
-    with open(file=path / "feed.xml", mode="wb") as xml_file:
-        logger.info("Writing to {}...", path / "feed.xml")
-        tree.write(xml_file, encoding="utf-8", xml_declaration=True)
+    with open(file=path / "feed.xml", mode="wb") as file:
+        logger.info("Writing to {} the following: {}", path / "feed.xml", xml_dict)
+        xmltodict.unparse(xml_dict, output=file, pretty=True)
 
 
 def main():
     logger.info("Starting generation job...")
     config = load_config()
-    models = load_models(config)
     for feed_config in config.feeds:
         try:
-            feed = feedparser.parse(url_file_stream_or_string=feed_config.url)
-            logger.info("Successfully parsed {}", feed.channel.title)
+            r = httpx.get(feed_config.url, follow_redirects=True)
+            xml_dict = xmltodict.parse(r.text)
+            channel = ParsedChannel(**xml_dict["rss"]["channel"])
+            items = [
+                ParsedItem(**entry) for entry in xml_dict["rss"]["channel"]["item"]
+            ]
+            logger.info("Successfully parsed {}", channel.title)
         except Exception as e:
             logger.exception("Failed parsing {}: {}", feed_config.url, e)
             continue
-        if not feed.entries:
-            logger.info("No entries for {}", feed.channel.title)
+        if not items:
+            logger.info("No entries for {}", channel.title)
             continue
         with SessionFactory() as session:
             try:
-                df = construct_dataframe(feed.entries, feed_config, session)
+                df = construct_dataframe(
+                    feed_config=feed_config, items=items, session=session
+                )
                 if df.empty:
-                    logger.info("No new entries for {}", feed.channel.title)
+                    logger.info("No new entries for {}", channel.title)
                     continue
-                quorom = feed_config.quorom or config.quorom
-                df = add_predictions(df, models, quorom)
-                logger.info("Example row: {}", df.iloc[0, :])
-                commit_items(df, feed_config, session)
-                write_feed(feed, config, feed_config, session)
+                if not config.cold_start:
+                    models = load_models(config)
+                    df = add_predictions(df, models)
+                logger.info("{} - First Row: {}", channel.title, df.iloc[0, :])
+                commit_items(df=df, feed_config=feed_config, session=session)
+                update_feed(
+                    config=config,
+                    feed_config=feed_config,
+                    channel=channel,
+                    session=session,
+                )
                 logger.info("Done generating {}", feed_config.url)
             except Exception as e:
-                logger.exception("Error while generating {}: {}", feed.channel.title, e)
+                logger.exception("Error while generating {}: {}", channel.title, e)
                 session.rollback()
     logger.info("Generation job completed")

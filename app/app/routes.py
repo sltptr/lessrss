@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -35,7 +34,7 @@ def register_routes(app, engine):
                     return f"Item with ID {id} does not exist", 404
                 item.label = Label(value)
                 session.commit()
-                if item.label is Label.POSITIVE:
+                if item.label is not Label.POOR:
                     return redirect(item.link)
                 return "OK", 200
             except:

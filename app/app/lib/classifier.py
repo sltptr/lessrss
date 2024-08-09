@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
-import numpy as np
-import pandas as pd
+from pandas import DataFrame
 
 from .types import ClassifierConfig
 
@@ -13,5 +12,5 @@ class Classifier(ABC):
         self.active = config.active
 
     @abstractmethod
-    def run(self, df: pd.DataFrame) -> np.array:
+    def run(self, df: DataFrame) -> DataFrame:
         pass

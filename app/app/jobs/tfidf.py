@@ -1,16 +1,20 @@
 import os
+from pathlib import Path
 
 import joblib
 import pandas as pd
 from loguru import logger
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import f1_score
 from sklearn.model_selection import train_test_split
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.pipeline import Pipeline
 from sqlalchemy import Engine, create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from ..models import Item, Label
+from ..lib.utils import upsample_dataframe_by_label
+from ..models import Item
 
 engine: Engine = create_engine(url=os.environ["SQLALCHEMY_URL"])
 Session = sessionmaker(bind=engine)
@@ -25,26 +29,33 @@ def main():
                 [
                     {
                         "title": item.title,
-                        "label": 1 if item.label is Label.POSITIVE else 0,
+                        "label": item.label.value,
                     }
                     for item in items
                 ]
             )
-            logger.debug(df)
         pipeline = Pipeline(
             [
                 ("tfidf", TfidfVectorizer()),
                 ("clf", LogisticRegression(class_weight="balanced")),
             ]
         )
-        X_train, X_test, y_train, y_test = train_test_split(
-            df["title"], df["label"], test_size=0.2, random_state=42
+        model = OneVsRestClassifier(pipeline)
+        train, test = train_test_split(
+            df,
+            test_size=0.1,
+            stratify=df[["label"]],
         )
-        pipeline.fit(X_train, y_train)
-        directory = "/data/models"
-        os.makedirs(directory, exist_ok=True)
-        file = os.path.join(directory, "tf-idf-logistic.joblib")
-        joblib.dump(pipeline, file)
+        upsampled_train = upsample_dataframe_by_label(
+            train
+        )  # Very important to upsample after split to avoid copying items across test/train
+        model.fit(upsampled_train["title"], upsampled_train["label"])
+        y_pred = model.predict(test["title"])
+        score = f1_score(y_pred, test["label"], average="macro")
+        logger.info("F1 Score: {}", score)
+        path = Path("/data/models")
+        path.mkdir(parents=True, exist_ok=True)
+        joblib.dump(model, path / "tf-idf-logistic.joblib")
         logger.info("Fitted TFIDF pipeline")
     except Exception as e:
-        logger.error(f"Exception occured: {e}")
+        logger.exception(f"Exception occured: {e}")

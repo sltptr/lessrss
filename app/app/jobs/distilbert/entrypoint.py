@@ -42,7 +42,7 @@ def main():
 
     huggingface_estimator = HuggingFace(
         entry_point="train.py",
-        source_dir="/lss/jobs/distilbert",
+        source_dir="/app/jobs/distilbert",
         instance_type="ml.p3.2xlarge",
         instance_count=1,
         role=role,

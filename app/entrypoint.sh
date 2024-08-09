@@ -15,7 +15,12 @@ if [ "$1" = "migrate" ]; then
   exit 0
 fi
 
+if [ "$1" = "test" ]; then
+  poetry run pytest
+  exit 0
+fi
+
 printenv >/env.txt
 crontab /config/crontab
 cron
-exec poetry run start
+exec poetry run gunicorn -w 4 -b 0.0.0.0:80 app.wsgi:app
