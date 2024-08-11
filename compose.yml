@@ -6,8 +6,7 @@ services:
     container_name: lss-dev
     ports:
       - 5001:80
-      # uncomment if debugging w/ debugpy
-      # - 5678:5678
+      - 5678:5678 # debugpy
     volumes:
       - ~/.aws:/root/.aws
       - ./config:/config

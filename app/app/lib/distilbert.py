@@ -43,7 +43,6 @@ class DistilBERT(Classifier):
         proba_series = df["title"].apply(lambda title: infer(title))
         proba_df = pd.DataFrame(
             proba_series.tolist(),
-            columns=["proba_poor", "proba_average", "proba_good"],
+            columns=["poor", "average", "good"],
         )
-        logger.debug(proba_df)
-        return pd.concat([df, proba_df], axis=1)
+        return pd.concat([df, proba_df], axis=1, ignore_index=True)

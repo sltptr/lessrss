@@ -1,5 +1,5 @@
 import joblib
-from loguru import logger
+import pandas as pd
 from sklearn.pipeline import Pipeline
 
 from .classifier import Classifier
@@ -13,9 +13,7 @@ class TFIDFLogistic(Classifier):
         self.model: Pipeline = joblib.load("/data/models/tf-idf-logistic.joblib")
 
     def run(self, df):
-        probabilities = self.model.predict_proba(df["title"])
-        df["proba_poor"] = [p[0] for p in probabilities]
-        df["proba_average"] = [p[1] for p in probabilities]
-        df["proba_good"] = [p[2] for p in probabilities]
-        logger.debug(df.iloc[0])
-        return df
+        return pd.DataFrame(
+            self.model.predict_proba(df["title"]),
+            columns=["poor", "average", "good"],
+        )

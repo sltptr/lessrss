@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -40,22 +41,20 @@ def construct_dataframe(
         is None,
         axis=1,
     )
-    return df[mask]
+    return df[mask].reset_index(drop=True)
 
 
 def add_predictions(
     df: DataFrame,
     models: list[Classifier],
 ) -> DataFrame:
-    scores = pd.DataFrame(
-        [[0, 0, 0] * df.shape[0]], columns=["poor", "average", "good"]
-    )
+    columns = ["poor", "average", "good"]
+    scores = pd.DataFrame([[0, 0, 0] for _ in range(df.shape[0])], columns=columns)
     for model in models:
-        model_df = model.run(df)
-        for label in ("poor", "average", "good"):
-            scores[label] += model_df[f"proba_{label}"] * model.weight
-    scores["final"] = scores.idxmax(axis=1)
-    df["predicted_label"] = scores["final"].apply(lambda label: Label[label.upper()])
+        proba_df = model.run(df)
+        for col in columns:
+            scores[col] += proba_df[col] * model.weight
+    df["predicted_label"] = scores.apply(lambda row: Label(row.argmax()), axis=1)
     return df
 
 
@@ -81,6 +80,7 @@ def commit_items(df: DataFrame, feed_config: FeedConfig, session: Session) -> No
         except Exception as e:
             logger.exception(f"Error while adding item {row.get('title')}: {e}")
             session.rollback()
+            sys.exit(1)
 
 
 def update_feed(
@@ -102,22 +102,18 @@ def update_feed(
 
     for item in items:
         parsed_item = ParsedItem(**item.__dict__)
-        parsed_item.link = f"{config.host}/update/{item.id}/2"
-        dismiss = (
-            f"<a href='{config.host}/update/{item.id}/1'>&#128309; Click To Skim</a>"
-        )
-        dislike = (
-            f"<a href='{config.host}/update/{item.id}/0'>&#128308; Click To Dislike</a>"
-        )
+        parsed_item.link = f"{config.host}/update/{item.id}/1"
+        emphasize = f"<a href='{config.host}/update/{item.id}/2'>&#11088; Click To Emphasize</a>"
+        deemphasize = f"<a href='{config.host}/update/{item.id}/0'>&#128308; Click To De-emphasize</a>"
         parsed_item.description = (
-            f"<p>{dismiss} | {dislike}</p><br><br>{item.description}"
+            f"<p>{emphasize} || {deemphasize}</p><br>{item.description}"
         )
         if item.predicted_label is Label.GOOD:
-            parsed_item.title = f"&#11088; {parsed_item.title}"
+            parsed_item.title = f"&#11088; | {parsed_item.title}"
         elif item.predicted_label is Label.AVERAGE:
-            parsed_item.title = f"&#11088; {parsed_item.title}"
+            parsed_item.title = f"&#128309; | {parsed_item.title}"
         elif item.predicted_label is Label.POOR:
-            parsed_item.title = f"&#11088; {parsed_item.title}"
+            parsed_item.title = f"&#128308; | {parsed_item.title}"
         xml_items.append(dict(parsed_item))
 
     path = Path("/data/feeds") / hash_url(feed_config.url)
@@ -162,7 +158,7 @@ def main():
                     config=config,
                     feed_config=feed_config,
                     channel=channel,
-                    session=session,
+                    session=session or True,
                 )
                 logger.info("Done generating {}", feed_config.url)
             except Exception as e:
