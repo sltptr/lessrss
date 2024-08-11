@@ -1,27 +1,5 @@
 services:
-  development:
-    build:
-      context: ./app
-      target: development
-    container_name: lss-dev
-    ports:
-      - 5001:80
-      - 5678:5678 # debugpy
-    volumes:
-      - ~/.aws:/root/.aws
-      - ./config:/config
-      - data:/data
-    environment:
-      - SQLALCHEMY_URL=sqlite:///data/lss.db
-      - IAM_ROLE=${IAM_ROLE}
-    develop:
-      watch:
-        - action: sync
-          path: ./app/app
-          target: /app
-    restart: always
-
-  production:
+  production: &production
     build:
       context: ./app
       target: production
@@ -35,12 +13,22 @@ services:
     environment:
       - SQLALCHEMY_URL=sqlite:///data/lss.db
       - IAM_ROLE=${IAM_ROLE}
+    restart: always
+
+  development:
+    <<: *production
+    build:
+      context: ./app
+      target: development
+    container_name: lss-dev
+    ports:
+      - 5001:80
+      - 5678:5678 # debugpy
     develop:
       watch:
         - action: sync
           path: ./app/app
           target: /app
-    restart: always
 
 volumes:
   data:
