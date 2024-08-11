@@ -119,13 +119,14 @@ def update_feed(
     path = Path("/data/feeds") / hash_url(feed_config.url)
     path.mkdir(parents=True, exist_ok=True)
     with open(file=path / "feed.xml", mode="wb") as file:
-        logger.info("Writing to {} the following: {}", path / "feed.xml", xml_dict)
+        logger.info("Writing {} items to {}", len(items), path / "feed.xml")
         xmltodict.unparse(xml_dict, output=file, pretty=True)
 
 
 def main():
     logger.info("Starting generation job...")
     config = load_config()
+    models = load_models(config) if not config.cold_start else None
     for feed_config in config.feeds:
         try:
             r = httpx.get(feed_config.url, follow_redirects=True)
@@ -149,8 +150,7 @@ def main():
                 if df.empty:
                     logger.info("No new entries for {}", channel.title)
                     continue
-                if not config.cold_start:
-                    models = load_models(config)
+                if models:
                     df = add_predictions(df, models)
                 logger.info("{} - First Row: {}", channel.title, df.iloc[0, :])
                 commit_items(df=df, feed_config=feed_config, session=session)

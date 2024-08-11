@@ -3,25 +3,26 @@
     alt="LSS Logo" style="max-width: 80%; width: 1200px; height: auto;">
 </div>
 
-<p align="center">(but still simple enough)</p>
+### Updates / Issues
+
+08/11/24 - Test coverage needs improvement, alembic mostly unused for now, could
+add build testing, needs documentation for initial setup and probably an init
+script to help out
 
 ### Motivation
 
-RSS is great, but there's always opportunities for improvement. Having used a
-feed reader for the better part of a year, I wanted to see if RSS could be
-augmented with a simple recommender system that highlights the more interesting
-content.
-
-LSS is that solution, through simple click-tracking it learns to predict if you
-would read new entries by their titles. Effectively, this means LSS is a simple
-content-based filter that you can wrap around your feeds.
+Having used a feed reader for the better part of a year, I wanted to see if RSS
+could be augmented with a simple recommender system which highlights the content
+I'd find more interesting. LSS is that solution, just through click-tracking it
+learns to predict if you would read new RSS items by their titles.
 
 ### Features
 
-- Filter with a combination of TF-IDF Logistic Regression and DistilBERT
-  classification.
-- Toggle show all results from a feed, regardless of predictions.
-- Set default and specific weighted predictions for each feed.
+- Filter with a combination of classical TF-IDF regression and transformer-based
+  DistilBERT classification.
+- Toggle filtering for individual feeds if you want to see all items.
+- Set weights for each classifier, their weighted softmaxes are added up to
+  classify items.
 
 ### Setup
 
@@ -29,4 +30,4 @@ content-based filter that you can wrap around your feeds.
    as you'd like.
 2. If using DistilBERT, create `.env` and add the necessary envvar `IAM_ROLE`,
    requires being logged into the AWS CLI at `~/.aws`.
-3. Run `docker compose up -d`.
+3. Run `docker compose up production -d`.

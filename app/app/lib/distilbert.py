@@ -41,8 +41,7 @@ class DistilBERT(Classifier):
             return smax
 
         proba_series = df["title"].apply(lambda title: infer(title))
-        proba_df = pd.DataFrame(
+        return pd.DataFrame(
             proba_series.tolist(),
             columns=["poor", "average", "good"],
         )
-        return pd.concat([df, proba_df], axis=1, ignore_index=True)
