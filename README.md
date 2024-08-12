@@ -5,9 +5,8 @@
 
 ### Updates / Issues
 
-08/11/24 - Test coverage needs improvement, alembic mostly unused for now, could
-add build testing, needs documentation for initial setup and probably an init
-script to help out
+08/12/24 - Test coverage needs improvement, alembic mostly unused, needs
+documentation for initial setup and probably an init script
 
 ### Motivation
 
