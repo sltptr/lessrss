@@ -6,12 +6,13 @@ from sklearn.model_selection import train_test_split
 from sqlalchemy import Engine, create_engine
 from transformers import AutoTokenizer
 
-from ...lib.utils import upsample_dataframe_by_label
+from ...lib.utils import load_config, upsample_dataframe_by_label
 
 
 def build_dataset_and_upload(training_input_path: str, test_input_path: str):
 
-    engine: Engine = create_engine(url=os.environ["SQLALCHEMY_URL"])
+    config = load_config()
+    engine: Engine = create_engine(url=config.db_url)
     df = pd.read_sql("SELECT title,label FROM item WHERE label IS NOT NULL", engine)
     train, test = train_test_split(
         df,

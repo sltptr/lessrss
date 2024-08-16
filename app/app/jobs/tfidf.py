@@ -13,10 +13,12 @@ from sklearn.pipeline import Pipeline
 from sqlalchemy import Engine, create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from ..lib.utils import upsample_dataframe_by_label
+from ..lib.utils import load_config, upsample_dataframe_by_label
 from ..models import Item
 
-engine: Engine = create_engine(url=os.environ["SQLALCHEMY_URL"])
+config = load_config()
+
+engine: Engine = create_engine(url=config.db_url)
 Session = sessionmaker(bind=engine)
 
 

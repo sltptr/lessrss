@@ -1,3 +1,3 @@
-0 * * * * cd / && source env.txt && /usr/local/bin/poetry run generate > /proc/1/fd/1 2> /proc/1/fd/2
-0 0 * * * cd / && source env.txt && /usr/local/bin/poetry run tfidf > /proc/1/fd/1 2> /proc/1/fd/2
-0 0 * * 0 cd / && source env.txt && /usr/bin/timeout 2m /usr/local/bin/poetry run distilbert > /proc/1/fd/1 2> /proc/1/fd/2
+*/20 * * * * /bin/bash -c "cd / && /usr/local/bin/poetry run generate" >> /proc/1/fd/1 2>> /proc/1/fd/2
+0 0 * * * /bin/bash -c "cd / && /usr/local/bin/poetry run tfidf" >> /proc/1/fd/1 2>> /proc/1/fd/2
+0 0 * * 0 /bin/bash -c "cd / && /usr/local/bin/poetry run distilbert" >> /proc/1/fd/1 2>> /proc/1/fd/2

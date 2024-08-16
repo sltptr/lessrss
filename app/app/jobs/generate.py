@@ -21,7 +21,8 @@ from ..models import (
     get_past_two_weeks_items_by_feed_url,
 )
 
-engine: Engine = create_engine(url=os.environ["SQLALCHEMY_URL"])
+config = load_config()
+engine: Engine = create_engine(url=config.db_url)
 SessionFactory = sessionmaker(bind=engine)
 
 

@@ -20,7 +20,6 @@ if [ "$1" = "test" ]; then
   exit 0
 fi
 
-printenv >/env.txt
 crontab /config/crontab
 cron
 exec poetry run gunicorn -w 4 -b 0.0.0.0:80 app.wsgi:app

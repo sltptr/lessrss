@@ -6,10 +6,13 @@ import sagemaker
 from sagemaker.huggingface import HuggingFace
 from sagemaker.s3 import S3Downloader
 
+from app.lib.utils import load_config
+
 from .dataset import build_dataset_and_upload
 
 
 def main():
+    config = load_config()
     sess = sagemaker.Session()
     # sagemaker session bucket -> used for uploading data, models and logs
     # sagemaker will automatically create this bucket if it not exists
@@ -22,7 +25,7 @@ def main():
         role = sagemaker.get_execution_role()
     except ValueError:
         iam = boto3.client("iam")
-        role = iam.get_role(RoleName=os.environ["IAM_ROLE"])["Role"]["Arn"]
+        role = iam.get_role(RoleName=config.iam_role)["Role"]["Arn"]
 
     sess = sagemaker.Session(default_bucket=sagemaker_session_bucket)
 

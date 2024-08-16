@@ -1,7 +1,9 @@
 ---
 cold_start: true
 host: https://example.com
-quorom: 1
+db_url: sqlite:///data/lss.db
+iam_role: ExampleRole
+quorom: 2
 feeds:
   - url: https://feeds.bloomberg.com/markets/news.rss
   - url: https://feeds.bloomberg.com/politics/news.rss

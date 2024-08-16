@@ -10,9 +10,6 @@ services:
       - ~/.aws:/root/.aws
       - ./config:/config
       - data:/data
-    environment:
-      - SQLALCHEMY_URL=sqlite:///data/lss.db
-      - IAM_ROLE=${IAM_ROLE}
     restart: always
 
   development:

@@ -14,8 +14,10 @@ class FeedConfig(BaseModel):
 
 class Config(BaseModel):
     host: str
+    db_url: str
     feeds: list[FeedConfig]
     classifiers: dict[str, ClassifierConfig]
+    iam_role: str | None = None
     cold_start: bool = False
 
 
