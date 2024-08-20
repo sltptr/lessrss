@@ -3,7 +3,6 @@ cold_start: true
 host: https://example.com
 db_url: sqlite:///data/lss.db
 iam_role: ExampleRole
-quorom: 2
 feeds:
   - url: https://feeds.bloomberg.com/markets/news.rss
   - url: https://feeds.bloomberg.com/politics/news.rss
@@ -11,7 +10,6 @@ feeds:
   - url: https://news.ycombinator.com/rss
     filter: false
   - url: https://techcrunch.com/feed
-    quorom: 3
 classifiers:
   tfidf:
     weight: 1

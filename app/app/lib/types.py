@@ -9,7 +9,6 @@ class ClassifierConfig(BaseModel):
 class FeedConfig(BaseModel):
     url: str
     filter: bool | None = None
-    quorom: int | None = None
 
 
 class Config(BaseModel):
