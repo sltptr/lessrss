@@ -34,7 +34,8 @@ click-tracking it learns to predict what items you would read by their titles.
 
 ### Basic Setup
 
-0. Recommended to be run behind a reverse-proxy with authentication.
+0. Recommended to be run behind a reverse-proxy with authentication, default
+   port is 5000.
 1. Copy over the `config.yml` and `crontab` from `config/examples` to `config`,
    make any changes as you'd like.
 2. If using DistilBERT, add an `iam_role` field to the config that you'll have
