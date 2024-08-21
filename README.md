@@ -39,7 +39,7 @@ click-tracking it learns to predict what items you would read by their titles.
    make any changes as you'd like.
 2. If using DistilBERT, add an `iam_role` field to the config that you'll have
    to create on AWS, also need to have an AWS config at `~/.aws` for said IAM
-   role..
+   role.
 3. Starting out, I recommend to set `cold_start: true` at the top of your
    `config.yml` until you have enough data for the training cron jobs to work.
 4. Run `docker compose up production -d`
