@@ -31,11 +31,10 @@ click-tracking it learns to predict what items you would read by their titles.
 - Inference and most of the service runs inside the container, DistilBERT
   training runs on AWS Sagemaker and requires the AWS CLI to be configured on
   the host machine.
-- Designed to be self-hosted, I personally run my instance behind a Caddy
-  reverse-proxy.
 
 ### Basic Setup
 
+0. Recommended to be run behind a reverse-proxy with authentication.
 1. Copy over the `config.yml` and `crontab` from `config/examples` to `config`,
    make any changes as you'd like.
 2. If using DistilBERT, add an `iam_role` field to the config that you'll have
