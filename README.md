@@ -42,7 +42,7 @@ click-tracking it learns to predict what items you would read by their titles.
    role..
 3. Starting out, I recommend to set `cold_start: true` at the top of your
    `config.yml` until you have enough data for the training cron jobs to work.
-4. Run `docker compose up production -d`.
+4. Run `docker compose up production -d`
 
 ### Updates / Issues
 
