@@ -11,7 +11,7 @@ content I find more interesting. LSS is that solution, just through
 click-tracking it learns to predict what you item would read by their titles.
 
 <div align="center">
-  <img src="https://sltptr.github.io/static/lss/img/logo.png" 
+  <img src="https://sltptr.github.io/static/lss/img/example.png" 
     alt="LSS Logo" style="max-width: 80%; width: 1200px; height: auto;">
   <small>Demo of LSS feeds</small>
 </div>
