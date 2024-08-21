@@ -29,19 +29,21 @@ click-tracking it learns to predict what items you would read by their titles.
 - Set weights for each classifier, their weighted softmaxes are added up to
   classify items.
 - Inference and most of the service runs inside the container, DistilBERT
-  training runs on AWS Sagemaker and requires AWS CLI to be configured on the
-  host machine.
+  training runs on AWS Sagemaker and requires the AWS CLI to be configured on
+  the host machine.
 - Designed to be self-hosted, I personally run my instance behind a Caddy
   reverse-proxy.
 
 ### Basic Setup
 
-1. Copy over the `config` and `crontab` from `config/examples` to `config`, make
-   any changes as you'd like.
+1. Copy over the `config.yml` and `crontab` from `config/examples` to `config`,
+   make any changes as you'd like.
 2. If using DistilBERT, add an `iam_role` field to the config that you'll have
    to create on AWS, also need to have an AWS config at `~/.aws` for said IAM
    role..
-3. Run `docker compose up production -d`.
+3. Starting out, I recommend to set `cold_start: true` at the top of your
+   `config.yml` until you have enough data for the training cron jobs to work.
+4. Run `docker compose up production -d`.
 
 ### Updates / Issues
 
