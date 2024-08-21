@@ -1,0 +1,19 @@
+---
+cold_start: true
+host: https://example.com
+db_url: sqlite:///data/lss.db
+iam_role: ExampleRole
+feeds:
+  - url: https://feeds.bloomberg.com/markets/news.rss
+  - url: https://feeds.bloomberg.com/politics/news.rss
+  - url: https://feeds.bloomberg.com/technology/news.rss
+  - url: https://news.ycombinator.com/rss
+    filter: false
+  - url: https://techcrunch.com/feed
+classifiers:
+  tfidf:
+    weight: 1
+    active: true
+  distilbert:
+    weight: 2
+    active: false
