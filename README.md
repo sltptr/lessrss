@@ -6,9 +6,9 @@
 ### Motivation
 
 Having used a feed reader for the better part of a year, I wanted to see if RSS
-could be augmented with a simple recommender system that could highlight the
-content I find more interesting. LSS is that solution, just through
-click-tracking it learns to predict what items you would read by their titles.
+could be augmented with a recommender system that could highlight the content I
+find more interesting. LSS is that solution, just through click-tracking it
+learns to predict what items you would read by their titles.
 
 <div align="center">
   <img src="https://sltptr.github.io/static/lss/img/example.png" 
