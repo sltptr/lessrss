@@ -24,8 +24,8 @@ learns to predict what items you would read by their titles.
 - HTTP GET the URLs of all your filtered feeds at `/feeds`, paths are auto
   generated to keep the `config.yml` minimal.
 - Clicking an item's default link updates the title as average (&#128309;) in
-  the database, and additional links for updating as either good (&#11088;) or
-  poor (&#128308;) are added to the top of the item's description.
+  the database, and additional links for updating the item as either good
+  (&#11088;) or poor (&#128308;) are added to the top of the item's description.
 - Filter with an ensemble of classical TF-IDF regression and transformer-based
   DistilBERT classification.
 - Toggle filtering for individual feeds if you want to see all their updates.
