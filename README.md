@@ -18,12 +18,6 @@ click-tracking it learns to predict what items you would read by their titles.
   <small>Example of LSS feeds in a feed reader</small>
 </div>
 
-<div align="center">
-  <img src="https://sltptr.github.io/static/lss/img/description.png" 
-    alt="LSS Logo" style="max-width: 40%; width: 400px; height: auto;">
-  <small>Descriptions include links to emphasize and de-emphasize.</small>
-</div>
-
 ### Features
 
 - See which RSS items you would read (&#11088;), might read (&#128309;), and
@@ -31,7 +25,9 @@ click-tracking it learns to predict what items you would read by their titles.
   pass through the filter if you toggle `filter: false` in your `config.yml`.
 - HTTP GET the URLs of all your filtered feeds at `/feeds`, paths are auto
   generated to keep the `config.yml` minimal.
-
+- Clicking an item's link updates the title as average (&#128309;), and links to
+  update the item as either good (&#11088;) or poor (&#128308;) are added to the
+  description of the item.
 - Filter with an ensemble of classical TF-IDF regression and transformer-based
   DistilBERT classification.
 - Toggle filtering for individual feeds if you want to see all their updates.
