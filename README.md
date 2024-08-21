@@ -28,7 +28,8 @@ learns to predict what items you would read by their titles.
   (&#11088;) or poor (&#128308;) are added to the top of the item's description.
 - Filter with an ensemble of classical TF-IDF regression and transformer-based
   DistilBERT classification.
-- Toggle filtering for individual feeds if you want to see all their updates.
+- Toggle filtering for individual feeds or all feeds with the `filter` and
+  `cold_start` fields, respectively.
 - Set weights for each classifier, their weighted softmaxes are added up to
   classify items.
 - Inference and most of the service runs inside the container, DistilBERT
