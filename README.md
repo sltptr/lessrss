@@ -3,6 +3,8 @@
     alt="LSS Logo" style="max-width: 80%; width: 1200px; height: auto;">
 </div>
 
+---
+
 ### Motivation
 
 Having used a feed reader for the better part of a year, I wanted to see if RSS
