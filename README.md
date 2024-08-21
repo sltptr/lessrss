@@ -20,7 +20,7 @@ click-tracking it learns to predict what items you would read by their titles.
 
 <div align="center">
   <img src="https://sltptr.github.io/static/lss/img/description.png" 
-    alt="LSS Logo" style="max-width: 40%; width: 1200px; height: auto;">
+    alt="LSS Logo" style="max-width: 40%; width: 800px; height: auto;">
   <small>Descriptions include links to emphasize and de-emphasize.</small>
 </div>
 
