@@ -15,7 +15,13 @@ click-tracking it learns to predict what items you would read by their titles.
 <div align="center">
   <img src="https://sltptr.github.io/static/lss/img/example.png" 
     alt="LSS Logo" style="max-width: 80%; width: 1200px; height: auto;">
-  <small>Demo of LSS feeds</small>
+  <small>Example of LSS feeds in a feed reader</small>
+</div>
+
+<div align="center">
+  <img src="https://sltptr.github.io/static/lss/img/description.png" 
+    alt="LSS Logo" style="max-width: 80%; width: 1200px; height: auto;">
+  <small>Descriptions include links to emphasize and de-emphasize.</small>
 </div>
 
 ### Features
@@ -25,6 +31,7 @@ click-tracking it learns to predict what items you would read by their titles.
   pass through the filter if you toggle `filter: false` in your `config.yml`.
 - HTTP GET the URLs of all your filtered feeds at `/feeds`, paths are auto
   generated to keep the `config.yml` minimal.
+
 - Filter with an ensemble of classical TF-IDF regression and transformer-based
   DistilBERT classification.
 - Toggle filtering for individual feeds if you want to see all their updates.
