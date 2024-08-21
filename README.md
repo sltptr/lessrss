@@ -31,8 +31,8 @@ click-tracking it learns to predict what you item would read by their titles.
 
 ### Basic Setup
 
-1. Copy over the examples from `config/examples` to `config`, make any changes
-   as you'd like like feeds to use and frequency of the cron jobs.
+1. Copy over the `config` and `crontab` from `config/examples` to `config`, make
+   any changes as you'd like.
 2. If using DistilBERT, add an `iam_role` field to the config that you'll have
    to create on AWS, also need to have an AWS config at `~/.aws` for said IAM
    role..
