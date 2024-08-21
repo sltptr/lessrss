@@ -23,6 +23,8 @@ click-tracking it learns to predict what items you would read by their titles.
 - See which RSS items you would read (&#11088;), might read (&#128309;), and
   probably wouldn't read (&#128308;). The items you probably wouldn't read only
   pass through the filter if you toggle `filter: false` in your `config.yml`.
+- HTTP GET the URLs of all your filtered feeds at `/feeds`, paths are auto
+  generated to keep the `config.yml` minimal.
 - Filter with an ensemble of classical TF-IDF regression and transformer-based
   DistilBERT classification.
 - Toggle filtering for individual feeds if you want to see all their updates.
