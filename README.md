@@ -58,3 +58,13 @@ of ternary, looking into a solution that is good for small datasets. Test
 coverage needs improvement, alembic mostly unused so migrations are still done
 manually, needs documentation for setup and probably an init script. Thinking of
 including confidence scores in the generated feeds next to the emojis.
+
+09/17/24 - Through passive use of the application I'm seeing better results i.e.
+getting over the cold-start hurdle. Here's a recent evaluation metric from the
+docker compose logs, note that initially the precision/recall scores were closer
+to that of a trivial random classifier (~0.33 for ternary classification):
+
+```
+lss-prod  | {'eval_loss': 0.8556984066963196, 'eval_accuracy': 0.671875, 'eval_f1': 0.6756054421768708, 'eval_precision': 0.6959779006737331, 'eval_recall': 0.671875, 'eval_runtime':
+        │  0.8686, 'eval_samples_per_second': 221.042, 'eval_steps_per_second': 3.454, 'epoch': 3.0}
+```
